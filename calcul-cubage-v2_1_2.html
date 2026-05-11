@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3E8022">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Calcul Cubage">
+    <link rel="manifest" href="manifest.json">
+    <title>Calcul Cubage</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            /* overflow: hidden retiré : il bloquait position:sticky des onglets.
+               L'arrondi sera repris sur le footer en bas pour l'esthétique. */
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 20px);
+        }
+
+        /* ============================================================
+           NAV STICKY : la barre des 3 onglets reste collée en haut
+           pendant le scroll de la page.
+           Padding : 12px en haut/sur les côtés, 12px en bas (cet espace
+           sert à séparer les onglets du titre de page qui suit).
+           Pour désactiver le mode sticky, retirer "position: sticky"
+           et "top: 0" ci-dessous.
+           ============================================================ */
+        .nav-sticky-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            padding: 12px 25px;
+            /* Arrondis en haut pour reprendre celui du container
+               (qui n'a plus overflow:hidden pour permettre le sticky) */
+            border-radius: 20px 20px 0 0;
+        }
+
+        .content {
+            padding: 0 25px 25px 25px;
+            flex: 1;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 14px 8px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:first-child {
+            border-radius: 12px 0 0 12px;
+        }
+
+        .nav-btn:last-child {
+            border-radius: 0 12px 12px 0;
+        }
+
+        .nav-btn.primary {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+        }
+
+        .nav-btn.secondary {
+            background: #f0f0f0;
+            color: var(--color-text);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.98);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--color-text);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 18px;
+            font-size: 20px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            transition: border-color 0.3s;
+            color: var(--color-text);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .big-button {
+            width: 100%;
+            padding: 25px;
+            font-size: 22px;
+            font-weight: 700;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            margin-bottom: 15px;
+        }
+
+        .big-button.success {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+        }
+
+        .big-button.danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .big-button.secondary {
+            background: linear-gradient(135deg, var(--color-text) 0%, #3d4a3b 100%);
+            color: white;
+        }
+
+        .big-button:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+
+        .toggle-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            border: 2px solid var(--color-primary);
+            border-radius: 12px;
+            background: white;
+            color: var(--color-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+        }
+
+        .timer-display {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+            border: 3px solid var(--color-primary);
+        }
+
+        .timer-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .timer-inputs input {
+            width: 80px;
+            font-size: 48px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 10px 5px;
+            font-weight: 700;
+            color: var(--color-primary);
+            -moz-appearance: textfield;
+        }
+
+        .timer-inputs input::-webkit-outer-spin-button,
+        .timer-inputs input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .timer-inputs input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .timer-inputs span {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .timer-btn {
+            flex: 1;
+            padding: 20px;
+            font-size: 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .timer-btn.play {
+            background: var(--color-btn-play);
+            color: white;
+        }
+
+        .timer-btn.pause {
+            background: var(--color-btn-pause);
+            color: white;
+        }
+
+        .timer-btn.stop {
+            background: var(--color-btn-delete-time);
+            color: white;
+        }
+
+        .timer-btn:active {
+            transform: scale(0.95);
+        }
+
+        .table-wrapper {
+            margin: 0 -25px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            /* margin-top retiré : c'est la marge bas du h2 qui gère
+               l'espacement avec le titre Récapitulatif. */
+            font-size: 14px;
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+            padding: 5px 3px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        td {
+            padding: 5px 3px;
+            border-bottom: 1px solid #eee;
+            color: var(--color-text);
+            font-size: 13px;
+        }
+
+        /* Colonne # : centrage horizontal et padding latéral doublé pour aérer */
+        th.col-num, td.col-num {
+            text-align: center;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        /* Colonne Heure : largeur exacte du timestamp (pas de wrap) +
+           tampon à droite équivalent à 2 caractères pour ne pas coller
+           à la colonne Long. */
+        th.col-heure, td.col-heure {
+            white-space: nowrap;
+            padding-right: 16px;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        /* Boutons d'action ✎ et 🗑 :
+           padding vertical réduit à 25% pour gagner en hauteur de ligne,
+           padding latéral conservé pour rester cliquables. */
+        .action-btn {
+            border: none;
+            cursor: pointer;
+            padding: 2px 8px;
+            margin-right: 2px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            background: transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Cellule Actions : force les boutons sur une seule ligne
+           (pas de retour à la ligne automatique) et alignement à droite */
+        td.actions-cell {
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .action-btn.edit {
+            background: var(--color-btn-edit);
+        }
+
+        .action-btn.delete {
+            background: var(--color-btn-delete-row);
+        }
+
+        .action-btn:active {
+            transform: scale(0.9);
+        }
+
+        tr.row-evenement {
+            background: var(--color-bg-evenement);
+        }
+        tr.row-evenement td {
+            font-style: italic;
+        }
+
+        .summary {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 25px;
+        }
+
+        /* Bloc résumé : espacements entre lignes réduits de 30%
+           (12px → 8px, 15px → 11px) pour densifier l'affichage. */
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 17px;
+        }
+
+        .summary-row.separator {
+            border-top: 1px solid rgba(255,255,255,0.3);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .summary-row.total {
+            margin-bottom: 0;
+            padding-top: 11px;
+            border-top: 2px solid rgba(255,255,255,0.5);
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 11px;
+        }
+
+        .empty-row {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: var(--color-text);
+        }
+
+        .modal-content .form-group {
+            text-align: left;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .modal-btn.confirm {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .modal-btn.cancel {
+            background: #ddd;
+            color: var(--color-text);
+        }
+
+        .row-grume {
+            background: #f8fff8;
+        }
+
+        .row-temps {
+            background: #fff8f0;
+        }
+
+        h2 {
+            color: var(--color-text);
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .nav-btn {
+                font-size: 14px;
+                padding: 12px 6px;
+            }
+            
+            .big-button {
+                font-size: 20px;
+                padding: 20px;
+            }
+
+            th, td {
+                padding: 4px 2px;
+                font-size: 11px;
+            }
+
+            /* Padding latéral réduit en mobile pour la colonne # */
+            th.col-num, td.col-num {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+
+            /* Tampon mobile pour la colonne Heure */
+            th.col-heure, td.col-heure {
+                padding-right: 13px;
+            }
+
+            .timer-inputs input {
+                width: 60px;
+                font-size: 36px;
+            }
+
+            .timer-inputs span {
+                font-size: 36px;
+            }
+        }
+
+        /* ============================================================
+           FOOTER : bande verte en bas de page (non sticky).
+           Hauteur condensée à 75% de la hauteur de l'en-tête original.
+           Le contenu (nom entreprise, version, GitHub) est injecté
+           dynamiquement depuis la zone de personnalisation.
+           ============================================================ */
+        .app-footer {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+            padding: 9px 20px;
+            text-align: center;
+            font-size: 13px;
+            margin-top: auto;
+            /* Arrondis en bas pour reprendre celui du container */
+            border-radius: 0 0 20px 20px;
+        }
+        .app-footer .copyright-line {
+            font-weight: 600;
+        }
+        .app-footer .copyright-line a {
+            color: white;
+            text-decoration: underline;
+        }
+        .app-footer .privacy-line {
+            font-style: italic;
+            font-size: 11px;
+            font-weight: 300;
+            margin-top: 5px;
+            opacity: 0.92;
+        }
+        /* ============================================================
+           MODAL D'ÉDITION : ligne champ + bouton "actualiser"
+           Pour les champs PU et Prix dans le modal d'édition, on place
+           le bouton refresh à droite de l'input avec flexbox.
+           ============================================================ */
+        .edit-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .edit-row input {
+            flex: 1;
+        }
+        .refresh-btn {
+            background: var(--color-text);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+        }
+        .refresh-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+        .refresh-btn:active {
+            transform: scale(0.92);
+        }
+    </style>
+</head>
+<body>
+    <script>
+    // ============================================================================
+    // ⚙️ SECTION DE PERSONNALISATION - MODIFIABLE PAR L'UTILISATEUR
+    // ============================================================================
+    // Cette section contient toutes les variables que vous pouvez modifier
+    // facilement pour personnaliser l'application selon vos besoins.
+    // Modifier uniquement les valeurs après le signe =
+    // ============================================================================
+
+    // ----------------------------------------------------------------------------
+    // 🎨 COULEURS DE L'INTERFACE
+    // ----------------------------------------------------------------------------
+    // Ces couleurs définissent l'apparence générale de l'application
+    
+    const COLOR_PRIMARY = '#3E8022';        // Vert éclatant John Deere (boutons, en-têtes)
+    const COLOR_SECONDARY = '#367C2B';      // Vert pâle (dégradés, secondaire)
+    const COLOR_TEXT = '#5A6C57';           // Gris gunmetal (textes, labels)
+
+    // ----------------------------------------------------------------------------
+    // 🎨 COULEURS DES BOUTONS D'ACTION
+    // ----------------------------------------------------------------------------
+    // Couleurs des boutons de contrôle du chronomètre et du tableau
+    
+    const COLOR_BTN_PLAY = '#2ecc71';           // Bouton Play (vert)
+    const COLOR_BTN_PAUSE = '#f39c12';          // Bouton Pause (orange)
+    const COLOR_BTN_DELETE_TIME = '#e74c3c';    // Bouton Supprimer temps (rouge)
+    const COLOR_BTN_EDIT = '#f39c12';           // Bouton Éditer ligne (orange)
+    const COLOR_BTN_DELETE_ROW = '#e74c3c';     // Bouton Supprimer ligne (rouge)
+    const COLOR_BG_EVENEMENT = '#e3f2fd';       // Fond bleu clair des lignes Événement dans le récap
+
+    // ----------------------------------------------------------------------------
+    // 💰 VALEURS PAR DÉFAUT DES PARAMÈTRES
+    // ----------------------------------------------------------------------------
+    // Ces valeurs apparaissent automatiquement dans l'onglet Paramètres
+    
+    const DEFAULT_TARIF_M3 = 75;            // Tarif au m³ en euros
+    const DEFAULT_TAUX_HORAIRE = 80;        // Taux horaire en euros/heure
+    const DEFAULT_FRAIS_FIXES = 140;        // Frais fixes en euros
+    const DEFAULT_PRIX_MIN_BILLE = 20;      // Prix minimum par bille en euros
+    
+    const DEFAULT_CLIENT = '';              // Nom du client par défaut (vide = à remplir)
+    const DEFAULT_EMAIL = '';               // Email du client par défaut (vide = à remplir)
+
+    // ----------------------------------------------------------------------------
+    // 📄 INFORMATIONS GÉNÉRALES
+    // ----------------------------------------------------------------------------
+    
+    const APP_TITLE = '🪵 Calcul cubage';  // Titre affiché dans l'en-tête de l'application
+    const APP_VERSION = '2.1.2';            // Version de l'application (mise à jour à chaque modification)
+
+    // ----------------------------------------------------------------------------
+    // 🏢 IDENTITÉ DE L'ENTREPRISE / AUTEUR
+    // ----------------------------------------------------------------------------
+    // Affichées dans le footer en bas de page
+
+    const COMPANY_NAME = 'Scierie Seb Ring';   // Nom affiché après le © dans le footer
+    const GITHUB_URL = 'https://github.com/';   // URL du dépôt GitHub (laisser vide '' pour ne pas afficher le lien)
+    
+    // ----------------------------------------------------------------------------
+    // 💵 TAXE (TVA)
+    // ----------------------------------------------------------------------------
+    // Taux de TVA appliqué sur le total HT pour calculer le TTC
+    // Format décimal : 0.20 = 20%, 0.055 = 5.5%, etc.
+    
+    const TAUX_TVA = 0.20;                  // Taux de TVA (20% par défaut)
+
+    // ============================================================================
+    // ⛔ FIN DE LA SECTION DE PERSONNALISATION
+    // ============================================================================
+    // Ne modifiez rien en dessous de cette ligne sauf si vous savez ce que vous faites
+    // ============================================================================
+
+    // Application des couleurs via CSS variables
+    document.documentElement.style.setProperty('--color-primary', COLOR_PRIMARY);
+    document.documentElement.style.setProperty('--color-secondary', COLOR_SECONDARY);
+    document.documentElement.style.setProperty('--color-text', COLOR_TEXT);
+    document.documentElement.style.setProperty('--color-btn-play', COLOR_BTN_PLAY);
+    document.documentElement.style.setProperty('--color-btn-pause', COLOR_BTN_PAUSE);
+    document.documentElement.style.setProperty('--color-btn-delete-time', COLOR_BTN_DELETE_TIME);
+    document.documentElement.style.setProperty('--color-btn-edit', COLOR_BTN_EDIT);
+    document.documentElement.style.setProperty('--color-btn-delete-row', COLOR_BTN_DELETE_ROW);
+    document.documentElement.style.setProperty('--color-bg-evenement', COLOR_BG_EVENEMENT);
+    </script>
+
+    <div class="container">
+        <!-- En-tête supprimé en v2.1 : le titre "Calcul cubage" prenait
+             trop de place. Le badge de version est désormais affiché
+             dans le footer en bas de page.
+
+             Pour désactiver le mode "onglets sticky en haut", retirer
+             les propriétés "position: sticky" et "top: 0" sur la classe
+             .nav-sticky-wrapper dans le CSS. -->
+
+        <div class="nav-sticky-wrapper">
+            <div class="nav-buttons">
+                <button class="nav-btn primary" onclick="showPage('parametres', this)">Paramètres</button>
+                <button class="nav-btn secondary" onclick="showPage('saisie', this)">Saisie</button>
+                <button class="nav-btn secondary" onclick="showPage('recap', this)">Récap</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Page Paramètres -->
+            <div id="page-parametres" class="page active">
+                <h2 style="margin-top: 0; margin-bottom: 25px; font-size: 24px;">Paramètres du chantier</h2>
+                <div class="form-group">
+                    <label>Nom du client</label>
+                    <input type="text" id="client-name" placeholder="Ex: Dupont">
+                </div>
+                <div class="form-group">
+                    <label>Email du client</label>
+                    <input type="email" id="client-email" placeholder="Ex: dupont@exemple.fr">
+                </div>
+                <div class="form-group">
+                    <label>Tarif au m³ (€)</label>
+                    <input type="number" id="tarif-m3" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Taux horaire (€/h)</label>
+                    <input type="number" id="taux-horaire" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Frais fixes (€)</label>
+                    <input type="number" id="frais-fixes" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Minimum par bille (€)</label>
+                    <input type="number" id="prix-min-bille" step="0.01">
+                </div>
+                <button class="big-button success" onclick="saveParametres()">
+                    ✓ Enregistrer les paramètres
+                </button>
+
+                <!-- Séparateur "ou" centré entre les deux boutons.
+                     Calcul : le big-button au-dessus a margin-bottom: 15px,
+                     on retire 15px de margin-top sur le "ou" pour annuler cet
+                     écart, puis on applique 15px d'espace au-dessus ET au-
+                     dessous du texte "ou" pour qu'il soit équidistant. -->
+                <div style="text-align: center; margin: -15px 0 15px 0; padding: 15px 0 0 0; color: #999; font-size: 16px;">ou</div>
+
+                <button class="big-button secondary" onclick="document.getElementById('file-input').click()" style="margin-top: 0;">
+                    📂 Charger un Chantier Sauvegardé
+                </button>
+                <input type="file" id="file-input" accept=".json" style="display: none;" onchange="loadChantierFromFile(event)">
+            </div>
+
+            <!-- Page Saisie -->
+            <div id="page-saisie" class="page">
+                <h2 style="margin-top: 0; margin-bottom: 25px; font-size: 24px;">Mesure de la bille</h2>
+                
+                <div class="form-group">
+                    <label>Longueur (cm)</label>
+                    <input type="number" inputmode="decimal" id="longueur" placeholder="Ex: 350" step="1">
+                </div>
+
+                <div class="toggle-buttons">
+                    <button class="toggle-btn active" onclick="toggleMesure('diametre', this)">Diamètre</button>
+                    <button class="toggle-btn" onclick="toggleMesure('circonference', this)">Circonférence</button>
+                </div>
+
+                <div class="form-group" id="mesure-diametre">
+                    <label>Diamètre (cm)</label>
+                    <input type="number" inputmode="decimal" id="diametre" placeholder="Ex: 45" step="0.1">
+                </div>
+
+                <div class="form-group" id="mesure-circonference" style="display: none;">
+                    <label>Circonférence (cm)</label>
+                    <input type="number" inputmode="decimal" id="circonference" placeholder="Ex: 141" step="0.1">
+                </div>
+
+                <button class="big-button success" onclick="addGrume()">
+                    ✓ Ajouter la Bille
+                </button>
+
+                <hr style="margin: 40px 0; border: none; border-top: 2px solid #eee;">
+
+                <h2 style="margin-bottom: 25px; font-size: 24px;">Saisie du temps</h2>
+
+                <div class="timer-display">
+                    <div class="timer-inputs">
+                        <input type="number" inputmode="numeric" id="timer-hours" value="00" min="0" max="23">
+                        <span>:</span>
+                        <input type="number" inputmode="numeric" id="timer-minutes" value="00" min="0" max="59">
+                        <span>:</span>
+                        <input type="number" inputmode="numeric" id="timer-seconds" value="00" min="0" max="59">
+                    </div>
+                </div>
+                <p style="text-align: center; color: #999; font-size: 14px; margin-top: -10px; margin-bottom: 20px;">Pause le chrono pour éditer manuellement</p>
+
+                <div class="timer-controls">
+                    <button class="timer-btn play" onclick="startTimer()">▶</button>
+                    <button class="timer-btn pause" onclick="pauseTimer()">⏸</button>
+                    <button class="timer-btn stop" onclick="confirmResetTimer()">🗑️</button>
+                </div>
+
+                <button class="big-button success" onclick="addTemps()" style="margin-top: 30px;">
+                    ✓ Ajouter le Temps
+                </button>
+
+                <hr style="margin: 40px 0; border: none; border-top: 2px solid #eee;">
+
+                <h2 style="margin-bottom: 25px; font-size: 24px;">Événement</h2>
+
+                <div class="form-group">
+                    <label>Libellé</label>
+                    <input type="text" id="evt-libelle" placeholder="Ex: fin de bille, casse lame, pause...">
+                </div>
+
+                <div class="form-group">
+                    <label>Prix (€)</label>
+                    <input type="number" inputmode="decimal" id="evt-prix" placeholder="0" step="0.01" value="0">
+                </div>
+
+                <button class="big-button success" onclick="addEvenement()">
+                    ✓ Ajouter l'Événement
+                </button>
+            </div>
+
+            <!-- Page Récap -->
+            <div id="page-recap" class="page">
+                <h2 style="margin-top: 0; margin-bottom: 12px; font-size: 24px;">Récapitulatif</h2>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <!-- Tableau récap v2.1 : min-width réduits pour
+                                     densifier l'affichage sur mobile.
+                                     - Colonne # : centrée, padding doublé (cf. .col-num)
+                                     - Colonne Heure : largeur exacte du timestamp (cf. .col-heure) -->
+                                <th class="col-num">#</th>
+                                <th class="col-heure">Heure</th>
+                                <th style="min-width: 38px;">Long.<br>(m)</th>
+                                <th style="min-width: 38px;">Diam.<br>(cm)</th>
+                                <th style="min-width: 60px;">Volume<br>/ Temps</th>
+                                <th style="min-width: 40px;">PU</th>
+                                <th style="min-width: 48px;">Prix<br>(€)</th>
+                                <th style="min-width: 64px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <tr>
+                                <td colspan="8" class="empty-row">Aucune donnée saisie</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="summary">
+                    <div class="summary-row">
+                        <span>Nombre total de billes:</span>
+                        <span id="total-grumes">0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Volume total:</span>
+                        <span id="total-volume">0.00 m³</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Sous-total bois:</span>
+                        <span id="subtotal-bois">0.00 €</span>
+                    </div>
+                    <div class="summary-row separator">
+                        <span>Total travail horaire:</span>
+                        <span id="total-temps">0 min</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Sous-total temps:</span>
+                        <span id="subtotal-temps">0.00 €</span>
+                    </div>
+                    <div class="summary-row separator">
+                        <span>Frais fixes:</span>
+                        <span id="frais-fixes-display">0.00 €</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Sous-total événements:</span>
+                        <span id="subtotal-evenements">0.00 €</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>TOTAL HT:</span>
+                        <span id="total-ht">0.00 €</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>TVA (<span id="tva-percent">20</span>%):</span>
+                        <span id="montant-tva">0.00 €</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>TOTAL TTC:</span>
+                        <span id="total-ttc">0.00 €</span>
+                    </div>
+                </div>
+                
+                <button class="big-button secondary" onclick="exportCSV()" style="margin-top: 25px;">
+                    📊 Exporter en CSV
+                </button>
+                
+                <button class="big-button success" onclick="saveChantierToFile()" style="margin-top: 15px;">
+                    💾 Sauvegarder le Chantier
+                </button>
+                
+                <button class="big-button danger" onclick="confirmReset()" style="margin-top: 15px;">
+                    🗑️ Terminer et Réinitialiser
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer en bas de page (non sticky) :
+             ligne 1 : © + nom entreprise + version + lien GitHub (si défini)
+             ligne 2 : phrase RGPD en italique petite police
+             Toutes les valeurs sont injectées depuis la zone de personnalisation. -->
+        <footer class="app-footer">
+            <div class="copyright-line">
+                <script>
+                    (function() {
+                        var html = '\u00A9 ' + COMPANY_NAME + ' - Version ' + APP_VERSION;
+                        if (GITHUB_URL) {
+                            html += ' - <a href="' + GITHUB_URL + '" target="_blank" rel="noopener">GitHub</a>';
+                        }
+                        document.write(html);
+                    })();
+                </script>
+            </div>
+            <div class="privacy-line">Les données saisies sur cette page ne sont pas collectées par l'auteur.</div>
+        </footer>
+    </div>
+
+    <!-- Modal de confirmation -->
+    <div id="modal-confirm" class="modal">
+        <div class="modal-content">
+            <h2>⚠️ Confirmation</h2>
+            <p style="font-size: 16px; color: #666; margin: 20px 0;">
+                Voulez-vous vraiment terminer ce chantier et effacer toutes les données ?
+            </p>
+            <p style="font-size: 14px; color: #999;">
+                Cette action est irréversible.
+            </p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal()">Annuler</button>
+                <button class="modal-btn confirm" onclick="resetChantier()">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'édition -->
+    <div id="modal-edit" class="modal">
+        <div class="modal-content">
+            <h2>✏️ Éditer l'entrée</h2>
+            <div class="form-group" id="edit-libelle-group" style="display: none;">
+                <label>Libellé</label>
+                <input type="text" id="edit-libelle">
+            </div>
+            <div class="form-group" id="edit-volume-group">
+                <label id="edit-volume-label">Volume / Temps</label>
+                <input type="number" id="edit-volume" step="0.001">
+            </div>
+            <div class="form-group">
+                <label>Prix unitaire (€)</label>
+                <!-- Champ + bouton actualiser PU côte à côte.
+                     Le bouton (id=btn-refresh-pu) est caché pour les
+                     événements (cf. openEditModal). Quand on l'active,
+                     il relit chantier.tarif ou chantier.tauxHoraire selon
+                     le type d'entrée et remplit le champ. -->
+                <div class="edit-row">
+                    <input type="number" id="edit-prix-unitaire" step="0.01">
+                    <button type="button" class="refresh-btn" id="btn-refresh-pu"
+                            onclick="refreshEditPU()" title="Réappliquer le tarif des paramètres">
+                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Prix total (€)</label>
+                <!-- Champ + bouton actualiser Prix total côte à côte.
+                     Caché pour les événements. Quand activé, recalcule le
+                     prix total à partir des champs Volume/Temps et PU
+                     actuels du modal (donc en tenant compte d'éventuelles
+                     modifications non encore sauvegardées). Applique le
+                     plancher chantier.prixMinBille pour les grumes. -->
+                <div class="edit-row">
+                    <input type="number" id="edit-prix" step="0.01">
+                    <button type="button" class="refresh-btn" id="btn-refresh-prix"
+                            onclick="refreshEditPrix()" title="Recalculer le prix total">
+                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeEditModal()">Annuler</button>
+                <button class="modal-btn confirm" onclick="saveEdit()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chantier = {
+            client: DEFAULT_CLIENT,
+            email: DEFAULT_EMAIL,
+            tarif: DEFAULT_TARIF_M3,
+            prixMinBille: DEFAULT_PRIX_MIN_BILLE,
+            tauxHoraire: DEFAULT_TAUX_HORAIRE,
+            fraisFixes: DEFAULT_FRAIS_FIXES,
+            entries: []
+        };
+
+        let currentMesure = 'diametre';
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let timerRunning = false;
+        let timerStartTimestamp = 0;  // Date.now() au moment du Play (corrigé de l'offset initial)
+        let editingEntryId = null;
+
+        // Enregistrer le service worker pour PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+            });
+        }
+
+        window.onload = function() {
+            document.title = APP_TITLE.replace(/^[^\w]+/, '') + ' v' + APP_VERSION;
+            loadData();
+            updateDisplay();
+            loadParametresForm();
+            // Afficher le taux de TVA en %
+            document.getElementById('tva-percent').textContent = (TAUX_TVA * 100).toFixed(0);
+        };
+
+        function saveData() {
+            localStorage.setItem('scieur-mobile-data', JSON.stringify(chantier));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('scieur-mobile-data');
+            if (saved) {
+                try {
+                    const parsedData = JSON.parse(saved);
+                    chantier = parsedData;
+                    
+                    if (!chantier.entries || !Array.isArray(chantier.entries)) {
+                        chantier.entries = [];
+                    }
+                    // Note : pour prixMinBille et fraisFixes, on accepte 0
+                    // comme valeur valide (= pas de prix minimum / pas de
+                    // frais fixes). Donc on ne remplace que si undefined.
+                    if (chantier.prixMinBille === undefined) {
+                        chantier.prixMinBille = DEFAULT_PRIX_MIN_BILLE;
+                    }
+                    if (chantier.fraisFixes === undefined) {
+                        chantier.fraisFixes = DEFAULT_FRAIS_FIXES;
+                    }
+                    // À l'inverse, un tarif ou taux horaire à 0 n'a pas de
+                    // sens métier (on ne facture pas à 0€) : on remplace
+                    // aussi quand la valeur est 0.
+                    if (chantier.tarif === undefined || chantier.tarif === 0) {
+                        chantier.tarif = DEFAULT_TARIF_M3;
+                    }
+                    if (chantier.tauxHoraire === undefined || chantier.tauxHoraire === 0) {
+                        chantier.tauxHoraire = DEFAULT_TAUX_HORAIRE;
+                    }
+                } catch (error) {
+                    console.error('Erreur de chargement des données:', error);
+                    chantier.entries = [];
+                }
+            }
+        }
+
+        function showPage(pageName, buttonElement) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageName).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('primary'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.add('secondary'));
+            if (buttonElement) {
+                buttonElement.classList.remove('secondary');
+                buttonElement.classList.add('primary');
+            }
+            
+            updateDisplay();
+        }
+
+        function loadParametresForm() {
+            // Helper : retourne la valeur si elle est un nombre fini (donc 0
+            // est conservé), sinon le défaut. Symétrique à lireNombre() ci-
+            // dessous dans saveParametres : sans cela, un 0 stocké reviendrait
+            // à 140 (DEFAULT_FRAIS_FIXES) au prochain affichage du formulaire.
+            const valOrDefault = (v, defaut) =>
+                (typeof v === 'number' && !isNaN(v)) ? v : defaut;
+
+            document.getElementById('client-name').value = chantier.client || DEFAULT_CLIENT;
+            document.getElementById('client-email').value = chantier.email || DEFAULT_EMAIL;
+            document.getElementById('tarif-m3').value = valOrDefault(chantier.tarif, DEFAULT_TARIF_M3);
+            document.getElementById('prix-min-bille').value = valOrDefault(chantier.prixMinBille, DEFAULT_PRIX_MIN_BILLE);
+            document.getElementById('taux-horaire').value = valOrDefault(chantier.tauxHoraire, DEFAULT_TAUX_HORAIRE);
+            document.getElementById('frais-fixes').value = valOrDefault(chantier.fraisFixes, DEFAULT_FRAIS_FIXES);
+        }
+
+        function saveParametres() {
+            const client = document.getElementById('client-name').value.trim();
+            const email = document.getElementById('client-email').value.trim();
+
+            // Helper : lit un champ numérique et retourne sa valeur, ou
+            // la valeur par défaut si le champ est vide ou non-numérique.
+            // ATTENTION : ne PAS utiliser "parseFloat(x) || DEFAULT" ici,
+            // car 0 est falsy en JS et serait remplacé par le défaut, ce
+            // qui empêcherait l'utilisateur de saisir 0 (cas valide pour
+            // "pas de prix minimum" ou "pas de frais fixes").
+            const lireNombre = (id, defaut) => {
+                const v = parseFloat(document.getElementById(id).value);
+                return isNaN(v) ? defaut : v;
+            };
+
+            const tarif = lireNombre('tarif-m3', DEFAULT_TARIF_M3);
+            const prixMinBille = lireNombre('prix-min-bille', DEFAULT_PRIX_MIN_BILLE);
+            const tauxHoraire = lireNombre('taux-horaire', DEFAULT_TAUX_HORAIRE);
+            const fraisFixes = lireNombre('frais-fixes', DEFAULT_FRAIS_FIXES);
+
+            if (!client) {
+                alert('⚠️ Veuillez entrer le nom du client');
+                return;
+            }
+
+            chantier.client = client;
+            chantier.email = email;
+            chantier.tarif = tarif;
+            chantier.prixMinBille = prixMinBille;
+            chantier.tauxHoraire = tauxHoraire;
+            chantier.fraisFixes = fraisFixes;
+            
+            saveData();
+            updateDisplay();   // Rafraîchir le récap pour refléter les nouveaux paramètres
+            alert('✓ Paramètres enregistrés avec succès!');
+        }
+
+        function toggleMesure(type, buttonElement) {
+            currentMesure = type;
+            
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            if (buttonElement) {
+                buttonElement.classList.add('active');
+            }
+            
+            if (type === 'diametre') {
+                document.getElementById('mesure-diametre').style.display = 'block';
+                document.getElementById('mesure-circonference').style.display = 'none';
+            } else {
+                document.getElementById('mesure-diametre').style.display = 'none';
+                document.getElementById('mesure-circonference').style.display = 'block';
+            }
+        }
+
+        function calculerVolume(longueur, diametre) {
+            const rayon = diametre / 2 / 100;
+            const volume = Math.PI * Math.pow(rayon, 2) * longueur;
+            return volume;
+        }
+
+        function formatDateTime(date) {
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = String(d.getFullYear()).slice(-2);
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        }
+
+        function addGrume() {
+            if (!chantier.client) {
+                alert('⚠️ Veuillez d\'abord enregistrer les paramètres');
+                return;
+            }
+
+            // Saisie en cm, conversion immédiate en mètres pour rester
+            // compatible avec le format de stockage v1.x (longueur en m)
+            const longueurCm = parseFloat(document.getElementById('longueur').value);
+            const longueur = longueurCm / 100;  // longueur en mètres
+            let diametre;
+
+            if (currentMesure === 'diametre') {
+                diametre = parseFloat(document.getElementById('diametre').value);
+            } else {
+                const circonference = parseFloat(document.getElementById('circonference').value);
+                if (!circonference || circonference <= 0) {
+                    alert('⚠️ Veuillez entrer une circonférence valide');
+                    return;
+                }
+                diametre = circonference / Math.PI;
+            }
+
+            if (!longueurCm || longueurCm <= 0 || !diametre || diametre <= 0) {
+                alert('⚠️ Veuillez entrer des valeurs valides');
+                return;
+            }
+
+            const volume = calculerVolume(longueur, diametre);
+            let prix = volume * chantier.tarif;
+            
+            if (chantier.prixMinBille > 0 && prix < chantier.prixMinBille) {
+                prix = chantier.prixMinBille;
+            }
+            
+            chantier.entries.push({
+                id: Date.now(),
+                type: 'grume',
+                timestamp: Date.now(),
+                longueur: longueur,
+                diametre: diametre,
+                volume: volume,
+                prixUnitaire: chantier.tarif,
+                prix: prix
+            });
+
+            saveData();
+            
+            document.getElementById('longueur').value = '';
+            document.getElementById('diametre').value = '';
+            document.getElementById('circonference').value = '';
+            
+            let message = '✓ Bille ajoutée avec succès!\n\nVolume: ' + volume.toFixed(3) + ' m³\nPrix: ' + prix.toFixed(2) + ' €';
+            if (chantier.prixMinBille > 0 && prix === chantier.prixMinBille) {
+                message += '\n\n(Prix minimum appliqué)';
+            }
+            alert(message);
+            
+            updateDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const hours = Math.floor(timerSeconds / 3600);
+            const minutes = Math.floor((timerSeconds % 3600) / 60);
+            const seconds = timerSeconds % 60;
+            
+            document.getElementById('timer-hours').value = String(hours).padStart(2, '0');
+            document.getElementById('timer-minutes').value = String(minutes).padStart(2, '0');
+            document.getElementById('timer-seconds').value = String(seconds).padStart(2, '0');
+        }
+
+        function parseTimerValue() {
+            const hours = parseInt(document.getElementById('timer-hours').value) || 0;
+            const minutes = parseInt(document.getElementById('timer-minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('timer-seconds').value) || 0;
+            return hours * 3600 + minutes * 60 + seconds;
+        }
+
+        // Timer basé sur Date.now() : résiste au verrouillage du téléphone et à
+        // la mise en arrière-plan du navigateur. Le tick (setInterval 250 ms)
+        // sert seulement à rafraîchir l'affichage ; la valeur réelle du chrono
+        // est toujours recalculée comme (Date.now() - timerStartTimestamp).
+        function startTimer() {
+            if (!timerRunning) {
+                // On part de la valeur affichée (qui peut avoir été éditée à
+                // la main pendant la pause) et on l'inscrit dans le timestamp
+                // de référence pour que les ticks suivants donnent la bonne
+                // durée totale.
+                const offsetSec = parseTimerValue();
+                timerStartTimestamp = Date.now() - offsetSec * 1000;
+                timerSeconds = offsetSec;
+                timerRunning = true;
+                document.getElementById('timer-hours').readOnly = true;
+                document.getElementById('timer-minutes').readOnly = true;
+                document.getElementById('timer-seconds').readOnly = true;
+                timerInterval = setInterval(() => {
+                    timerSeconds = Math.floor((Date.now() - timerStartTimestamp) / 1000);
+                    updateTimerDisplay();
+                }, 250);
+            }
+        }
+
+        function pauseTimer() {
+            if (timerRunning) {
+                // Recalcul final pour figer la durée exacte au moment du clic
+                timerSeconds = Math.floor((Date.now() - timerStartTimestamp) / 1000);
+                timerRunning = false;
+                document.getElementById('timer-hours').readOnly = false;
+                document.getElementById('timer-minutes').readOnly = false;
+                document.getElementById('timer-seconds').readOnly = false;
+                clearInterval(timerInterval);
+                updateTimerDisplay();
+            }
+        }
+
+        function confirmResetTimer() {
+            if (timerSeconds > 0) {
+                if (confirm('⚠️ Voulez-vous vraiment remettre le chronomètre à zéro ?')) {
+                    resetTimer();
+                }
+            } else {
+                resetTimer();
+            }
+        }
+
+        function resetTimer() {
+            timerRunning = false;
+            clearInterval(timerInterval);
+            timerSeconds = 0;
+            timerStartTimestamp = 0;
+            updateTimerDisplay();
+            document.getElementById('timer-hours').readOnly = false;
+            document.getElementById('timer-minutes').readOnly = false;
+            document.getElementById('timer-seconds').readOnly = false;
+        }
+
+        function addTemps() {
+            if (!chantier.client) {
+                alert('⚠️ Veuillez d\'abord enregistrer les paramètres');
+                return;
+            }
+
+            if (timerRunning) pauseTimer();
+
+            const totalSeconds = parseTimerValue();
+            const minutes = Math.round(totalSeconds / 60);
+
+            if (!minutes || minutes <= 0) {
+                alert('⚠️ Le chronomètre est à zéro');
+                return;
+            }
+
+            const heures = minutes / 60;
+            const prix = heures * chantier.tauxHoraire;
+
+            // Timestamp = début théorique de la période de travail.
+            // - Si l'utilisateur a cliqué Play à un moment donné,
+            //   timerStartTimestamp contient déjà la date de démarrage
+            //   (ajustée en cas de pause / édition manuelle de l'offset
+            //   pendant la pause).
+            // - Si l'utilisateur a saisi la durée manuellement sans
+            //   jamais cliquer Play (timerStartTimestamp est resté à 0),
+            //   on déduit le début théorique en soustrayant la durée
+            //   à l'instant courant.
+            const timestampDebut = (timerStartTimestamp > 0)
+                ? timerStartTimestamp
+                : Date.now() - (totalSeconds * 1000);
+
+            chantier.entries.push({
+                id: Date.now(),
+                type: 'temps',
+                timestamp: timestampDebut,
+                minutes: minutes,
+                prixUnitaire: chantier.tauxHoraire,
+                prix: prix
+            });
+
+            saveData();
+            resetTimer();
+            
+            alert('✓ Temps ajouté avec succès!\n\nDurée: ' + minutes + ' min\nPrix: ' + prix.toFixed(2) + ' €');
+            
+            updateDisplay();
+        }
+
+        function addEvenement() {
+            if (!chantier.client) {
+                alert('⚠️ Veuillez d\'abord enregistrer les paramètres');
+                return;
+            }
+
+            const libelle = (document.getElementById('evt-libelle').value || '').trim();
+            const prixRaw = document.getElementById('evt-prix').value;
+            const prix = parseFloat(prixRaw);
+
+            if (isNaN(prix) || prix < 0) {
+                alert('⚠️ Prix invalide (entrez 0 pour un simple marqueur temporel)');
+                return;
+            }
+
+            chantier.entries.push({
+                id: Date.now(),
+                type: 'evenement',
+                timestamp: Date.now(),
+                libelle: libelle,
+                prix: prix,
+                prixUnitaire: prix
+            });
+
+            saveData();
+
+            document.getElementById('evt-libelle').value = '';
+            document.getElementById('evt-prix').value = '0';
+
+            const message = prix > 0
+                ? '✓ Événement ajouté\n' + (libelle || '(sans libellé)') + '\nPrix: ' + prix.toFixed(2) + ' €'
+                : '✓ Marqueur ajouté\n' + (libelle || '(sans libellé)');
+            alert(message);
+
+            updateDisplay();
+        }
+
+        function deleteEntry(id) {
+            if (confirm('⚠️ Supprimer cette entrée ?')) {
+                chantier.entries = chantier.entries.filter(e => e.id !== id);
+                saveData();
+                updateDisplay();
+            }
+        }
+
+        function openEditModal(id) {
+            const entry = chantier.entries.find(e => e.id === id);
+            if (!entry) return;
+
+            editingEntryId = id;
+
+            // Réinitialiser les visibilités par défaut
+            document.getElementById('edit-libelle-group').style.display = 'none';
+            document.getElementById('edit-volume-group').style.display = 'block';
+
+            // Boutons "actualiser" PU et Prix : visibles uniquement pour
+            // grume et temps. Pour un événement, le PU et le prix sont
+            // saisis manuellement et n'ont pas de source paramétrique.
+            const showRefresh = (entry.type !== 'evenement');
+            document.getElementById('btn-refresh-pu').style.display = showRefresh ? 'inline-flex' : 'none';
+            document.getElementById('btn-refresh-prix').style.display = showRefresh ? 'inline-flex' : 'none';
+
+            if (entry.type === 'grume') {
+                document.getElementById('edit-volume-label').textContent = 'Volume (m³)';
+                document.getElementById('edit-volume').value = entry.volume.toFixed(3);
+                document.getElementById('edit-volume').step = '0.001';
+            } else if (entry.type === 'temps') {
+                document.getElementById('edit-volume-label').textContent = 'Temps (minutes)';
+                document.getElementById('edit-volume').value = entry.minutes;
+                document.getElementById('edit-volume').step = '1';
+            } else if (entry.type === 'evenement') {
+                // Pas de champ "volume", remplacé par "libellé"
+                document.getElementById('edit-volume-group').style.display = 'none';
+                document.getElementById('edit-libelle-group').style.display = 'block';
+                document.getElementById('edit-libelle').value = entry.libelle || '';
+            }
+
+            document.getElementById('edit-prix-unitaire').value = entry.prixUnitaire.toFixed(2);
+            document.getElementById('edit-prix').value = entry.prix.toFixed(2);
+
+            document.getElementById('modal-edit').classList.add('active');
+        }
+
+        // Actualise le champ PU en réappliquant le tarif courant des paramètres :
+        //   - grume → chantier.tarif (€/m³)
+        //   - temps → chantier.tauxHoraire (€/h)
+        // Utile si l'utilisateur a corrigé le tarif après avoir saisi des
+        // entrées avec un mauvais tarif.
+        function refreshEditPU() {
+            const entry = chantier.entries.find(e => e.id === editingEntryId);
+            if (!entry) return;
+
+            let nouveauPU;
+            if (entry.type === 'grume') {
+                nouveauPU = chantier.tarif;
+            } else if (entry.type === 'temps') {
+                nouveauPU = chantier.tauxHoraire;
+            } else {
+                return; // événement : pas concerné
+            }
+            document.getElementById('edit-prix-unitaire').value = nouveauPU.toFixed(2);
+        }
+
+        // Recalcule le prix total à partir des champs actuels du modal
+        // (Volume/Temps + PU). Tient compte des modifications non encore
+        // sauvegardées. Applique le plancher chantier.prixMinBille pour
+        // les grumes (jamais en dessous du prix min par bille).
+        function refreshEditPrix() {
+            const entry = chantier.entries.find(e => e.id === editingEntryId);
+            if (!entry) return;
+
+            const volumeOuTemps = parseFloat(document.getElementById('edit-volume').value);
+            const pu = parseFloat(document.getElementById('edit-prix-unitaire').value);
+            if (isNaN(volumeOuTemps) || isNaN(pu)) {
+                alert('⚠️ Volume/Temps ou PU invalide');
+                return;
+            }
+
+            let nouveauPrix;
+            if (entry.type === 'grume') {
+                // Prix = volume (m³) × PU (€/m³), avec plancher prixMinBille
+                nouveauPrix = volumeOuTemps * pu;
+                if (chantier.prixMinBille > 0 && nouveauPrix < chantier.prixMinBille) {
+                    nouveauPrix = chantier.prixMinBille;
+                }
+            } else if (entry.type === 'temps') {
+                // Prix = (minutes / 60) × PU (€/h)
+                nouveauPrix = (volumeOuTemps / 60) * pu;
+            } else {
+                return; // événement : pas concerné
+            }
+            document.getElementById('edit-prix').value = nouveauPrix.toFixed(2);
+        }
+
+        function closeEditModal() {
+            document.getElementById('modal-edit').classList.remove('active');
+            editingEntryId = null;
+        }
+
+        function saveEdit() {
+            const entry = chantier.entries.find(e => e.id === editingEntryId);
+            if (!entry) return;
+
+            const newPrixUnitaire = parseFloat(document.getElementById('edit-prix-unitaire').value);
+            const newPrix = parseFloat(document.getElementById('edit-prix').value);
+
+            if (entry.type === 'grume') {
+                const newVolume = parseFloat(document.getElementById('edit-volume').value);
+                entry.volume = newVolume;
+            } else if (entry.type === 'temps') {
+                const newMinutes = parseFloat(document.getElementById('edit-volume').value);
+                entry.minutes = newMinutes;
+            } else if (entry.type === 'evenement') {
+                entry.libelle = (document.getElementById('edit-libelle').value || '').trim();
+            }
+
+            if (!isNaN(newPrixUnitaire)) entry.prixUnitaire = newPrixUnitaire;
+            if (!isNaN(newPrix)) entry.prix = newPrix;
+
+            saveData();
+            closeEditModal();
+            updateDisplay();
+            alert('✓ Modification enregistrée avec succès!');
+        }
+
+        function updateDisplay() {
+            const tableBody = document.getElementById('table-body');
+            
+            if (!chantier.entries || !Array.isArray(chantier.entries) || chantier.entries.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" class="empty-row">Aucune donnée saisie</td></tr>';
+            } else {
+                let tableHTML = '';
+                let grumeCount = 0;
+                
+                chantier.entries.forEach((entry) => {
+                    if (entry.type === 'grume') {
+                        grumeCount++;
+                        tableHTML += `
+                            <tr class="row-grume">
+                                <td class="col-num"><strong>${grumeCount}</strong></td>
+                                <td class="col-heure">${formatDateTime(entry.timestamp)}</td>
+                                <td>${entry.longueur.toFixed(2)}</td>
+                                <td>${entry.diametre.toFixed(1)}</td>
+                                <td><strong>${entry.volume.toFixed(3)} m³</strong></td>
+                                <td>${entry.prixUnitaire.toFixed(0)} €</td>
+                                <td><strong>${entry.prix.toFixed(2)} €</strong></td>
+                                <td class="actions-cell">
+                                    <button class="action-btn edit" onclick="openEditModal(${entry.id})" title="Éditer">
+                                        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteEntry(${entry.id})" title="Supprimer">
+                                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    } else if (entry.type === 'temps') {
+                        tableHTML += `
+                            <tr class="row-temps">
+                                <td class="col-num"><strong>⏱</strong></td>
+                                <td class="col-heure">${formatDateTime(entry.timestamp)}</td>
+                                <td colspan="2" style="text-align: center;"><em>-</em></td>
+                                <td><strong>${entry.minutes} min</strong></td>
+                                <td>${entry.prixUnitaire.toFixed(0)} €</td>
+                                <td><strong>${entry.prix.toFixed(2)} €</strong></td>
+                                <td class="actions-cell">
+                                    <button class="action-btn edit" onclick="openEditModal(${entry.id})" title="Éditer">
+                                        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteEntry(${entry.id})" title="Supprimer">
+                                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    } else if (entry.type === 'evenement') {
+                        const libelleEsc = (entry.libelle || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        const libelleAff = libelleEsc || '<span style="opacity:0.5">(marqueur)</span>';
+                        // PU des événements : sans décimales si entier (ex: "50 €"),
+                        // avec 2 décimales sinon (ex: "49.50 €"). Le prix total
+                        // garde toujours 2 décimales.
+                        const puFormat = (entry.prixUnitaire % 1 === 0)
+                            ? entry.prixUnitaire.toFixed(0)
+                            : entry.prixUnitaire.toFixed(2);
+                        tableHTML += `
+                            <tr class="row-evenement">
+                                <td class="col-num"><strong>★</strong></td>
+                                <td class="col-heure">${formatDateTime(entry.timestamp)}</td>
+                                <td colspan="2" style="text-align: center;"><em>-</em></td>
+                                <td>${libelleAff}</td>
+                                <td>${puFormat} €</td>
+                                <td><strong>${entry.prix.toFixed(2)} €</strong></td>
+                                <td class="actions-cell">
+                                    <button class="action-btn edit" onclick="openEditModal(${entry.id})" title="Éditer">
+                                        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteEntry(${entry.id})" title="Supprimer">
+                                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                tableBody.innerHTML = tableHTML;
+            }
+
+            const grumes = chantier.entries.filter(e => e.type === 'grume');
+            const temps = chantier.entries.filter(e => e.type === 'temps');
+            const evenements = chantier.entries.filter(e => e.type === 'evenement');
+
+            const totalGrumes = grumes.length;
+            const totalVolume = grumes.reduce((sum, g) => sum + g.volume, 0);
+            const subtotalBois = grumes.reduce((sum, g) => sum + g.prix, 0);
+            const totalMinutes = temps.reduce((sum, t) => sum + t.minutes, 0);
+            const subtotalTemps = temps.reduce((sum, t) => sum + t.prix, 0);
+            const subtotalEvenements = evenements.reduce((sum, e) => sum + (e.prix || 0), 0);
+            const totalHT = subtotalBois + subtotalTemps + chantier.fraisFixes + subtotalEvenements;
+            const montantTVA = totalHT * TAUX_TVA;
+            const totalTTC = totalHT + montantTVA;
+
+            document.getElementById('total-grumes').textContent = totalGrumes;
+            document.getElementById('total-volume').textContent = totalVolume.toFixed(3) + ' m³';
+            document.getElementById('subtotal-bois').textContent = subtotalBois.toFixed(2) + ' €';
+            document.getElementById('total-temps').textContent = totalMinutes + ' min';
+            document.getElementById('subtotal-temps').textContent = subtotalTemps.toFixed(2) + ' €';
+            document.getElementById('frais-fixes-display').textContent = chantier.fraisFixes.toFixed(2) + ' €';
+            document.getElementById('subtotal-evenements').textContent = subtotalEvenements.toFixed(2) + ' €';
+            document.getElementById('total-ht').textContent = totalHT.toFixed(2) + ' €';
+            document.getElementById('montant-tva').textContent = montantTVA.toFixed(2) + ' €';
+            document.getElementById('total-ttc').textContent = totalTTC.toFixed(2) + ' €';
+        }
+
+        function confirmReset() {
+            document.getElementById('modal-confirm').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-confirm').classList.remove('active');
+        }
+
+        function resetChantier() {
+            chantier = {
+                client: DEFAULT_CLIENT,
+                email: DEFAULT_EMAIL,
+                tarif: DEFAULT_TARIF_M3,
+                prixMinBille: DEFAULT_PRIX_MIN_BILLE,
+                tauxHoraire: DEFAULT_TAUX_HORAIRE,
+                fraisFixes: DEFAULT_FRAIS_FIXES,
+                entries: []
+            };
+            saveData();
+            closeModal();
+            updateDisplay();
+            loadParametresForm();
+            alert('✓ Chantier terminé et données effacées');
+        }
+
+        function exportCSV() {
+            if (!chantier.entries || chantier.entries.length === 0) {
+                alert('⚠️ Aucune donnée à exporter');
+                return;
+            }
+
+            // Échappe une valeur CSV : si elle contient ; " ou un retour ligne,
+            // on l'entoure de guillemets et on double les guillemets internes.
+            const csvEscape = (val) => {
+                const s = String(val == null ? '' : val);
+                if (/[;"\n\r]/.test(s)) {
+                    return '"' + s.replace(/"/g, '""') + '"';
+                }
+                return s;
+            };
+
+            let csv = 'Client;Email;Type;Numero;Heure;Longueur_m;Diametre_cm;Volume_Temps;Prix_Unitaire;Prix_EUR\n';
+            
+            let grumeCount = 0;
+            chantier.entries.forEach((entry) => {
+                if (entry.type === 'grume') {
+                    grumeCount++;
+                    csv += `${chantier.client};${chantier.email};Bille;${grumeCount};${formatDateTime(entry.timestamp)};${entry.longueur.toFixed(2)};${entry.diametre.toFixed(1)};${entry.volume.toFixed(3)} m3;${entry.prixUnitaire.toFixed(2)};${entry.prix.toFixed(2)}\n`;
+                } else if (entry.type === 'temps') {
+                    csv += `${chantier.client};${chantier.email};Temps;;${formatDateTime(entry.timestamp)};;;${entry.minutes} min;${entry.prixUnitaire.toFixed(2)};${entry.prix.toFixed(2)}\n`;
+                } else if (entry.type === 'evenement') {
+                    const lib = csvEscape(entry.libelle || '');
+                    csv += `${chantier.client};${chantier.email};Evenement;;${formatDateTime(entry.timestamp)};;;${lib};${entry.prixUnitaire.toFixed(2)};${entry.prix.toFixed(2)}\n`;
+                }
+            });
+
+            const grumes = chantier.entries.filter(e => e.type === 'grume');
+            const temps = chantier.entries.filter(e => e.type === 'temps');
+            const evenements = chantier.entries.filter(e => e.type === 'evenement');
+            const totalVolume = grumes.reduce((sum, g) => sum + g.volume, 0);
+            const subtotalBois = grumes.reduce((sum, g) => sum + g.prix, 0);
+            const totalMinutes = temps.reduce((sum, t) => sum + t.minutes, 0);
+            const subtotalTemps = temps.reduce((sum, t) => sum + t.prix, 0);
+            const subtotalEvenements = evenements.reduce((sum, e) => sum + (e.prix || 0), 0);
+            const totalHT = subtotalBois + subtotalTemps + chantier.fraisFixes + subtotalEvenements;
+            const montantTVA = totalHT * TAUX_TVA;
+            const totalTTC = totalHT + montantTVA;
+
+            csv += `\n`;
+            csv += `TOTAUX;;;;;;;;;\n`;
+            csv += `Nombre de billes;;;;${grumes.length};;;;\n`;
+            csv += `Volume total;;;;;${totalVolume.toFixed(3)};;;\n`;
+            csv += `Sous-total bois;;;;;;;;${subtotalBois.toFixed(2)}\n`;
+            csv += `Temps total;;;;;;;;${totalMinutes};\n`;
+            csv += `Sous-total temps;;;;;;;;${subtotalTemps.toFixed(2)}\n`;
+            csv += `Frais fixes;;;;;;;;${chantier.fraisFixes.toFixed(2)}\n`;
+            csv += `Sous-total evenements;;;;;;;;${subtotalEvenements.toFixed(2)}\n`;
+            csv += `TOTAL HT;;;;;;;;${totalHT.toFixed(2)}\n`;
+            csv += `TVA (${(TAUX_TVA * 100).toFixed(0)}%);;;;;;;;${montantTVA.toFixed(2)}\n`;
+            csv += `TOTAL TTC;;;;;;;;${totalTTC.toFixed(2)}\n`;
+
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `chantier_${chantier.client}_${date}.csv`;
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            
+            alert('✓ Export CSV réussi!\n\nFichier: ' + filename);
+        }
+
+        function saveChantierToFile() {
+            if (!chantier.client) {
+                alert('⚠️ Aucun chantier à sauvegarder');
+                return;
+            }
+
+            const date = new Date().toISOString();
+            const chantierData = {
+                ...chantier,
+                dateSauvegarde: date,
+                version: APP_VERSION
+            };
+
+            const json = JSON.stringify(chantierData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            
+            const dateStr = new Date().toISOString().split('T')[0];
+            const filename = `chantier_${chantier.client}_${dateStr}.json`;
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            
+            alert('✓ Chantier sauvegardé!\n\nFichier: ' + filename);
+        }
+
+        function loadChantierFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loadedData = JSON.parse(e.target.result);
+                    
+                    if (!loadedData.client) {
+                        alert('⚠️ Fichier invalide');
+                        return;
+                    }
+
+                    if (loadedData.grumes) {
+                        loadedData.entries = loadedData.grumes.map(g => ({
+                            ...g,
+                            type: 'grume',
+                            prixUnitaire: g.prixUnitaire || loadedData.tarif || 0
+                        }));
+                        delete loadedData.grumes;
+                    }
+
+                    chantier = {
+                        client: loadedData.client,
+                        email: loadedData.email || DEFAULT_EMAIL,
+                        // Pour tarif et tauxHoraire : 0 → remplacement par
+                        // défaut (cf. note dans loadData).
+                        tarif: loadedData.tarif || DEFAULT_TARIF_M3,
+                        tauxHoraire: loadedData.tauxHoraire || DEFAULT_TAUX_HORAIRE,
+                        // Pour prixMinBille et fraisFixes : 0 est une valeur
+                        // valide, on ne remplace que si vraiment manquante.
+                        prixMinBille: (loadedData.prixMinBille !== undefined && loadedData.prixMinBille !== null)
+                            ? loadedData.prixMinBille : DEFAULT_PRIX_MIN_BILLE,
+                        fraisFixes: (loadedData.fraisFixes !== undefined && loadedData.fraisFixes !== null)
+                            ? loadedData.fraisFixes : DEFAULT_FRAIS_FIXES,
+                        entries: loadedData.entries || []
+                    };
+
+                    saveData();
+                    updateDisplay();
+                    loadParametresForm();
+                    
+                    alert('✓ Chantier chargé avec succès!\n\nClient: ' + chantier.client + '\n' + chantier.entries.length + ' entrées');
+                } catch (error) {
+                    alert('⚠️ Erreur lors du chargement du fichier');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+    </script>
+</body>
+</html>
