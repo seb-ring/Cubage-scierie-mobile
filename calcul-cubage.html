@@ -49,14 +49,16 @@
             top: 0;
             z-index: 100;
             background: white;
-            padding: 12px 25px;
-            /* Arrondis en haut pour reprendre celui du container
-               (qui n'a plus overflow:hidden pour permettre le sticky) */
+            /* Padding latéral réduit de 25 à 15px (-40%) en v2.2.0
+               pour libérer de l'espace au formulaire de saisie qui
+               accueille le bandeau Essence à droite. */
+            padding: 12px 15px;
             border-radius: 20px 20px 0 0;
         }
 
         .content {
-            padding: 0 25px 25px 25px;
+            /* Padding latéral réduit de 25 à 15px (-40%) en v2.2.0. */
+            padding: 0 15px 25px 15px;
             flex: 1;
         }
 
@@ -173,8 +175,11 @@
 
         .toggle-btn {
             flex: 1;
-            padding: 18px;
-            font-size: 18px;
+            /* Padding et police réduits en v2.2.0 pour que "Circonférence"
+               (14 lettres) tienne sans déborder sur le bandeau Essence
+               à droite, sur smartphone en portrait (~245px utiles). */
+            padding: 14px 6px;
+            font-size: 14px;
             font-weight: 600;
             border: 2px solid var(--color-primary);
             border-radius: 12px;
@@ -271,7 +276,9 @@
         }
 
         .table-wrapper {
-            margin: 0 -25px;
+            /* Marge négative ajustée pour matcher le nouveau padding
+               latéral du .content (15px au lieu de 25px en v2.2.0). */
+            margin: 0 -15px;
             overflow-x: auto;
         }
 
@@ -313,6 +320,15 @@
         th.col-heure, td.col-heure {
             white-space: nowrap;
             padding-right: 16px;
+        }
+
+        /* Colonne Essence : affiche l'abréviation (max ~3 caractères).
+           Largeur calibrée pour ces 3 caractères + tampon. Centrée. */
+        th.col-essence, td.col-essence {
+            white-space: nowrap;
+            text-align: center;
+            min-width: 36px;
+            padding-right: 8px;
         }
 
         tr:hover {
@@ -584,6 +600,134 @@
         .refresh-btn:active {
             transform: scale(0.92);
         }
+        /* ============================================================
+           PAGE SAISIE : layout 2 colonnes (formulaire + Essence)
+           ============================================================ */
+        .saisie-layout {
+            display: grid;
+            grid-template-columns: 1fr 56px;
+            gap: 10px;
+            align-items: start;
+        }
+
+        .form-main {
+            min-width: 0;
+        }
+
+        /* Bandeau Essence à droite. Marge négative en haut pour aligner
+           le haut du bandeau au niveau du label "Longueur (cm)" et le
+           bas avec le bas du champ Diamètre. */
+        .essence-panel {
+            /* Pas de margin-top : on aligne le haut du panel avec le
+               haut du label "Longueur (cm)" du formulaire à gauche. */
+            margin-top: 0;
+        }
+
+        .essence-panel-title {
+            font-weight: 600;
+            font-size: 11px;
+            color: var(--color-text);
+            text-align: center;
+            /* Hauteur calibrée pour occuper exactement la place du
+               label "Longueur (cm)" du formulaire :
+               - hauteur du label : font 18px × line-height ~1.2 ≈ 22px
+               - margin-bottom du label : 10px
+               - Total : 32px
+               Le listbox démarrera donc pile au haut du champ Longueur. */
+            line-height: 32px;
+            margin-bottom: 0;
+        }
+
+        /* Carrousel vertical : <select size="7">.
+           Calcul vérifié par simulateur de rendu :
+           - Haut du label Longueur : Y=0
+           - Haut du champ Longueur (= haut idéal du listbox) : Y=32
+           - Bas du champ Diamètre (= bas idéal du listbox)   : Y=286
+           Le titre Essence occupant 32px (line-height), le listbox
+           doit faire : 286 - 32 = 254 px de hauteur. */
+        .essence-listbox {
+            width: 100%;
+            height: 254px;
+            padding: 0;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            background: white;
+            font-size: 10.5px;
+            color: var(--color-text);
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+
+        .essence-listbox option {
+            padding: 6px 6px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* Forcer le texte blanc sur l'option sélectionnée.
+           NB : Le rendu de option:checked est partiellement contrôlé
+           par le navigateur (système Android pour Brave). Ces règles
+           augmentent les chances qu'il respecte la couleur, mais ne
+           garantissent pas le résultat sur tous les navigateurs. */
+        .essence-listbox option:checked,
+        .essence-listbox option[selected] {
+            background: var(--color-primary) linear-gradient(135deg, var(--color-primary), var(--color-secondary)) !important;
+            color: white !important;
+            font-weight: 600;
+        }
+        /* ============================================================
+           MODAL D'ÉDITION : disposition Volume + Essence côte à côte
+           pour les grumes. Sur événement et temps, seule la colonne
+           gauche est visible (Essence cachée par JS).
+           ============================================================ */
+        .edit-volume-essence-row {
+            display: grid;
+            grid-template-columns: 1fr 130px;
+            gap: 12px;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .edit-volume-stack label,
+        .edit-essence-side label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--color-text);
+        }
+
+        .edit-volume-stack input,
+        .edit-essence-side select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+        }
+
+        /* ============================================================
+           LIGNE DE 2 BOUTONS CÔTE À CÔTE (page Récap : CSV + Mail)
+           Compact : chaque bouton fait la moitié de la largeur, avec un
+           gap au milieu. Police et padding réduits par rapport à un
+           gros bouton plein largeur pour ne pas prendre trop de place.
+           ============================================================ */
+        .dual-buttons-row {
+            display: flex;
+            gap: 10px;
+        }
+        .dual-button {
+            flex: 1;
+            /* Reset du margin-bottom du .big-button : remplacé par le gap
+               de la ligne et par le margin-top du bouton suivant. */
+            margin-bottom: 0;
+            /* Police et padding plus compacts que .big-button pour que
+               les 2 libellés tiennent sur la largeur d'un demi-écran. */
+            padding: 18px 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -601,7 +745,7 @@
     // ----------------------------------------------------------------------------
     // Ces couleurs définissent l'apparence générale de l'application
     
-    const COLOR_PRIMARY = '#3E8022';        // Vert éclatant (boutons, en-têtes)
+    const COLOR_PRIMARY = '#3E8022';        // Vert éclatant John Deere (boutons, en-têtes)
     const COLOR_SECONDARY = '#367C2B';      // Vert pâle (dégradés, secondaire)
     const COLOR_TEXT = '#5A6C57';           // Gris gunmetal (textes, labels)
 
@@ -622,10 +766,10 @@
     // ----------------------------------------------------------------------------
     // Ces valeurs apparaissent automatiquement dans l'onglet Paramètres
     
-    const DEFAULT_TARIF_M3 = 10;            // Tarif au m³ en euros
-    const DEFAULT_TAUX_HORAIRE = 10;        // Taux horaire en euros/heure
-    const DEFAULT_FRAIS_FIXES = 0;        // Frais fixes en euros
-    const DEFAULT_PRIX_MIN_BILLE = 0;      // Prix minimum par bille en euros
+    const DEFAULT_TARIF_M3 = 75;            // Tarif au m³ en euros
+    const DEFAULT_TAUX_HORAIRE = 80;        // Taux horaire en euros/heure
+    const DEFAULT_FRAIS_FIXES = 140;        // Frais fixes en euros
+    const DEFAULT_PRIX_MIN_BILLE = 20;      // Prix minimum par bille en euros
     
     const DEFAULT_CLIENT = '';              // Nom du client par défaut (vide = à remplir)
     const DEFAULT_EMAIL = '';               // Email du client par défaut (vide = à remplir)
@@ -635,7 +779,61 @@
     // ----------------------------------------------------------------------------
     
     const APP_TITLE = '🪵 Calcul cubage';  // Titre affiché dans l'en-tête de l'application
-    const APP_VERSION = '2.1.2';            // Version de l'application (mise à jour à chaque modification)
+    const APP_VERSION = '2.5.2';            // Version de l'application (mise à jour à chaque modification)
+
+    // ----------------------------------------------------------------------------
+    // ✉️ ENVOI DU RÉCAPITULATIF PAR MAIL
+    // ----------------------------------------------------------------------------
+    // Variables utilisées par le bouton "📧 Envoyer mail" de la page Récap.
+    // Le mail contient : EMAIL_INTRO + tableau sous-totaux ASCII + EMAIL_OUTRO
+    // + détail bille par bille au format CSV (séparateur |).
+    //
+    // Multi-ligne : utiliser des backticks ` et sauter des lignes librement,
+    // les retours à la ligne seront préservés tels quels dans le mail.
+    //
+    // EMAIL_SUJET : peut contenir {client} et {date} qui seront remplacés
+    // automatiquement par le nom du client et la date du jour au format
+    // jj/mm/aaaa.
+
+    const EMAIL_SUJET = 'Facture sciage {client} - {date}';
+
+    const EMAIL_INTRO = `Bonjour,
+
+Veuillez trouver ci-dessous le récapitulatif de votre chantier.`;
+
+    const EMAIL_OUTRO = `Pour toute question, n'hésitez pas à me contacter.
+
+Cordialement,
+Sébastien Ring
+Scierie Seb Ring`;
+
+    // ----------------------------------------------------------------------------
+    // 🌳 LISTE DES ESSENCES DE BOIS
+    // ----------------------------------------------------------------------------
+    // Chaque entrée a un nom long (stocké dans le JSON/CSV et utilisé en
+    // référence) et une abréviation 2-3 lettres (affichée dans le tableau
+    // récap pour gagner de la place).
+    //
+    // Pour ajouter une essence : ajouter une ligne { nom: '...', abrev: '...' }
+    // Pour en retirer une : commenter ou supprimer la ligne (les anciennes
+    // grumes qui l'utilisaient garderont leur nom long en stockage et
+    // afficheront les 3 premières lettres en fallback comme abréviation).
+    // Pour modifier l'ordre d'affichage : réordonner les lignes ci-dessous.
+    // L'ordre dans le carrousel de saisie suit cet ordre.
+
+    const ESSENCES = [
+        { nom: 'Douglas',         abrev: 'Dg'  },
+        { nom: 'Pin Sylvestre',   abrev: 'PS'  },
+        { nom: 'Chataignier',     abrev: 'Cha' },
+        { nom: 'Chene',           abrev: 'Che' },
+        { nom: 'Frene',           abrev: 'Frn' },
+        { nom: 'Sapin',           abrev: 'Sa'  },
+        { nom: 'Epicea',          abrev: 'Epa' },
+        { nom: 'Hêtre',           abrev: 'Ht'  },
+        { nom: 'Robinier',        abrev: 'Rb'  },
+        { nom: 'Autre feuillu',   abrev: 'AF'  },
+        { nom: 'Autre résineux',  abrev: 'AR'  }
+    ];
 
     // ----------------------------------------------------------------------------
     // 🏢 IDENTITÉ DE L'ENTREPRISE / AUTEUR
@@ -643,7 +841,7 @@
     // Affichées dans le footer en bas de page
 
     const COMPANY_NAME = 'Scierie Seb Ring';   // Nom affiché après le © dans le footer
-    const GITHUB_URL = 'https://github.com/seb-ring/Cubage-scierie-mobile';   // URL du dépôt GitHub (laisser vide '' pour ne pas afficher le lien)
+    const GITHUB_URL = 'https://github.com/';   // URL du dépôt GitHub (laisser vide '' pour ne pas afficher le lien)
     
     // ----------------------------------------------------------------------------
     // 💵 TAXE (TVA)
@@ -702,19 +900,19 @@
                 </div>
                 <div class="form-group">
                     <label>Tarif au m³ (€)</label>
-                    <input type="number" id="tarif-m3" step="0.01">
+                    <input type="number" id="tarif-m3" step="1">
                 </div>
                 <div class="form-group">
                     <label>Taux horaire (€/h)</label>
-                    <input type="number" id="taux-horaire" step="0.01">
+                    <input type="number" id="taux-horaire" step="1">
                 </div>
                 <div class="form-group">
                     <label>Frais fixes (€)</label>
-                    <input type="number" id="frais-fixes" step="0.01">
+                    <input type="number" id="frais-fixes" step="1">
                 </div>
                 <div class="form-group">
                     <label>Minimum par bille (€)</label>
-                    <input type="number" id="prix-min-bille" step="0.01">
+                    <input type="number" id="prix-min-bille" step="1">
                 </div>
                 <button class="big-button success" onclick="saveParametres()">
                     ✓ Enregistrer les paramètres
@@ -736,25 +934,46 @@
             <!-- Page Saisie -->
             <div id="page-saisie" class="page">
                 <h2 style="margin-top: 0; margin-bottom: 25px; font-size: 24px;">Mesure de la bille</h2>
-                
-                <div class="form-group">
-                    <label>Longueur (cm)</label>
-                    <input type="number" inputmode="decimal" id="longueur" placeholder="Ex: 350" step="1">
-                </div>
 
-                <div class="toggle-buttons">
-                    <button class="toggle-btn active" onclick="toggleMesure('diametre', this)">Diamètre</button>
-                    <button class="toggle-btn" onclick="toggleMesure('circonference', this)">Circonférence</button>
-                </div>
+                <!-- Layout 2 colonnes : formulaire de cubage à gauche,
+                     bandeau Essence à droite. La largeur de la colonne
+                     Essence (56px) est calibrée pour contenir le mot
+                     "Douglas" dans le carrousel. -->
+                <div class="saisie-layout">
+                    <div class="form-main">
+                        <div class="form-group">
+                            <label>Longueur (cm)</label>
+                            <input type="number" inputmode="decimal" id="longueur" placeholder="Ex: 350" step="1">
+                        </div>
 
-                <div class="form-group" id="mesure-diametre">
-                    <label>Diamètre (cm)</label>
-                    <input type="number" inputmode="decimal" id="diametre" placeholder="Ex: 45" step="0.1">
-                </div>
+                        <div class="toggle-buttons">
+                            <button class="toggle-btn active" onclick="toggleMesure('diametre', this)">Diamètre</button>
+                            <button class="toggle-btn" onclick="toggleMesure('circonference', this)">Circonférence</button>
+                        </div>
 
-                <div class="form-group" id="mesure-circonference" style="display: none;">
-                    <label>Circonférence (cm)</label>
-                    <input type="number" inputmode="decimal" id="circonference" placeholder="Ex: 141" step="0.1">
+                        <div class="form-group" id="mesure-diametre">
+                            <label>Diamètre (cm)</label>
+                            <input type="number" inputmode="decimal" id="diametre" placeholder="Ex: 45" step="0.1">
+                        </div>
+
+                        <div class="form-group" id="mesure-circonference" style="display: none;">
+                            <label>Circonférence (cm)</label>
+                            <input type="number" inputmode="decimal" id="circonference" placeholder="Ex: 141" step="0.1">
+                        </div>
+                    </div>
+
+                    <!-- Carrousel vertical des essences :
+                         <select size="5"> affiche 5 lignes en permanence
+                         + scroll vers les autres. La sélection est
+                         rémanente entre les ajouts (gérée par JS). Les
+                         options sont remplies dynamiquement au load
+                         depuis la constante ESSENCES. -->
+                    <div class="essence-panel">
+                        <div class="essence-panel-title">Essence</div>
+                        <select class="essence-listbox" id="essence-saisie" size="7" onchange="onEssenceSaisieChange()">
+                            <!-- Options injectées par populateEssenceSelect() -->
+                        </select>
+                    </div>
                 </div>
 
                 <button class="big-button success" onclick="addGrume()">
@@ -819,6 +1038,7 @@
                                      - Colonne Heure : largeur exacte du timestamp (cf. .col-heure) -->
                                 <th class="col-num">#</th>
                                 <th class="col-heure">Heure</th>
+                                <th class="col-essence">Ess.</th>
                                 <th style="min-width: 38px;">Long.<br>(m)</th>
                                 <th style="min-width: 38px;">Diam.<br>(cm)</th>
                                 <th style="min-width: 60px;">Volume<br>/ Temps</th>
@@ -845,12 +1065,20 @@
                         <span id="total-volume">0.00 m³</span>
                     </div>
                     <div class="summary-row">
+                        <span>Volume facturé au m³:</span>
+                        <span id="volume-facture-m3">0.00 m³</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Bille au forfait minimum:</span>
+                        <span id="nb-billes-forfait">0</span>
+                    </div>
+                    <div class="summary-row">
                         <span>Sous-total bois:</span>
                         <span id="subtotal-bois">0.00 €</span>
                     </div>
                     <div class="summary-row separator">
                         <span>Total travail horaire:</span>
-                        <span id="total-temps">0 min</span>
+                        <span id="total-temps">0.00 h</span>
                     </div>
                     <div class="summary-row">
                         <span>Sous-total temps:</span>
@@ -861,7 +1089,7 @@
                         <span id="frais-fixes-display">0.00 €</span>
                     </div>
                     <div class="summary-row">
-                        <span>Sous-total événements:</span>
+                        <span>Total événements:</span>
                         <span id="subtotal-evenements">0.00 €</span>
                     </div>
                     <div class="summary-row total">
@@ -878,14 +1106,23 @@
                     </div>
                 </div>
                 
-                <button class="big-button secondary" onclick="exportCSV()" style="margin-top: 25px;">
-                    📊 Exporter en CSV
-                </button>
-                
+                <!-- Ligne avec 2 boutons côte à côte : CSV et Envoi mail.
+                     Le bouton mail génère un récap ASCII (sous-totaux +
+                     détail bille par bille) et l'envoie via Web Share API
+                     ou fallback mailto:. -->
+                <div class="dual-buttons-row" style="margin-top: 25px;">
+                    <button class="big-button secondary dual-button" onclick="exportCSV()">
+                        📊 Export CSV
+                    </button>
+                    <button class="big-button secondary dual-button" onclick="sendRecapByMail()">
+                        📧 Envoyer mail
+                    </button>
+                </div>
+
                 <button class="big-button success" onclick="saveChantierToFile()" style="margin-top: 15px;">
                     💾 Sauvegarder le Chantier
                 </button>
-                
+
                 <button class="big-button danger" onclick="confirmReset()" style="margin-top: 15px;">
                     🗑️ Terminer et Réinitialiser
                 </button>
@@ -937,41 +1174,38 @@
                 <label>Libellé</label>
                 <input type="text" id="edit-libelle">
             </div>
-            <div class="form-group" id="edit-volume-group">
-                <label id="edit-volume-label">Volume / Temps</label>
-                <input type="number" id="edit-volume" step="0.001">
+
+            <!-- Bloc Volume + Essence côte à côte (uniquement pour grume).
+                 Pour temps et événement, on n'affiche que le champ
+                 Volume (ou Libellé) en pleine largeur. La visibilité
+                 du select Essence est gérée par openEditModal. -->
+            <div class="edit-volume-essence-row" id="edit-volume-group">
+                <div class="edit-volume-stack">
+                    <label id="edit-volume-label">Volume / Temps</label>
+                    <input type="number" id="edit-volume" step="0.01">
+                </div>
+                <div class="edit-essence-side" id="edit-essence-side">
+                    <label>Essence</label>
+                    <select id="edit-essence">
+                        <!-- Options injectées par populateEditEssenceSelect() -->
+                    </select>
+                </div>
             </div>
+
             <div class="form-group">
                 <label>Prix unitaire (€)</label>
-                <!-- Champ + bouton actualiser PU côte à côte.
-                     Le bouton (id=btn-refresh-pu) est caché pour les
-                     événements (cf. openEditModal). Quand on l'active,
-                     il relit chantier.tarif ou chantier.tauxHoraire selon
-                     le type d'entrée et remplit le champ. -->
                 <div class="edit-row">
-                    <input type="number" id="edit-prix-unitaire" step="0.01">
+                    <input type="number" id="edit-prix-unitaire" step="1">
                     <button type="button" class="refresh-btn" id="btn-refresh-pu"
                             onclick="refreshEditPU()" title="Réappliquer le tarif des paramètres">
                         <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
                     </button>
                 </div>
             </div>
-            <div class="form-group">
-                <label>Prix total (€)</label>
-                <!-- Champ + bouton actualiser Prix total côte à côte.
-                     Caché pour les événements. Quand activé, recalcule le
-                     prix total à partir des champs Volume/Temps et PU
-                     actuels du modal (donc en tenant compte d'éventuelles
-                     modifications non encore sauvegardées). Applique le
-                     plancher chantier.prixMinBille pour les grumes. -->
-                <div class="edit-row">
-                    <input type="number" id="edit-prix" step="0.01">
-                    <button type="button" class="refresh-btn" id="btn-refresh-prix"
-                            onclick="refreshEditPrix()" title="Recalculer le prix total">
-                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                    </button>
-                </div>
-            </div>
+            <!-- v2.5.0 : le champ "Prix total" a été retiré. Le prix est
+                 désormais toujours calculé à partir du volume et du prix
+                 unitaire (+ plancher prixMinBille des paramètres actuels
+                 appliqué à l'affichage). -->
             <div class="modal-buttons">
                 <button class="modal-btn cancel" onclick="closeEditModal()">Annuler</button>
                 <button class="modal-btn confirm" onclick="saveEdit()">Enregistrer</button>
@@ -980,6 +1214,49 @@
     </div>
 
     <script>
+        // ============================================================
+        // Helpers ESSENCES
+        // ============================================================
+
+        // Retourne l'abréviation d'une essence à partir de son nom long.
+        // Si l'essence n'est pas dans la liste (cas d'une grume importée
+        // avec une essence supprimée depuis), retourne les 3 premiers
+        // caractères du nom comme fallback.
+        function getAbrevForEssence(nom) {
+            if (!nom) return '';
+            const found = ESSENCES.find(e => e.nom === nom);
+            if (found) return found.abrev;
+            return nom.substring(0, 3);
+        }
+
+        // Remplit le carrousel <select> de la page Saisie à partir de
+        // la liste ESSENCES. Inclut une option "— Aucune —" en tête
+        // pour permettre la désélection. Appelé au chargement.
+        function populateEssenceSelect() {
+            const sel = document.getElementById('essence-saisie');
+            if (!sel) return;
+            let html = '<option value="">— Aucune —</option>';
+            ESSENCES.forEach(e => {
+                html += '<option value="' + e.nom + '">' + e.nom + '</option>';
+            });
+            sel.innerHTML = html;
+            sel.value = currentEssenceSaisie || '';
+        }
+
+        // Met à jour la variable globale quand l'utilisateur change
+        // l'essence dans le carrousel.
+        function onEssenceSaisieChange() {
+            const sel = document.getElementById('essence-saisie');
+            currentEssenceSaisie = sel.value || '';
+        }
+
+        // État de la sélection d'essence dans le carrousel de saisie.
+        // Rémanente entre les ajouts de billes (l'utilisateur ne doit
+        // pas re-sélectionner l'essence à chaque bille du même lot).
+        // Reste mémorisée en RAM uniquement (pas dans le JSON, c'est
+        // un état UI temporaire, pas une donnée du chantier).
+        let currentEssenceSaisie = '';
+
         let chantier = {
             client: DEFAULT_CLIENT,
             email: DEFAULT_EMAIL,
@@ -1011,6 +1288,7 @@
             loadData();
             updateDisplay();
             loadParametresForm();
+            populateEssenceSelect();  // remplit le carrousel d'essences page Saisie
             // Afficher le taux de TVA en %
             document.getElementById('tva-percent').textContent = (TAUX_TVA * 100).toFixed(0);
         };
@@ -1114,7 +1392,9 @@
             chantier.tarif = tarif;
             chantier.prixMinBille = prixMinBille;
             chantier.tauxHoraire = tauxHoraire;
-            chantier.fraisFixes = fraisFixes;
+            // v2.4.1 : arrondi round2 des frais fixes pour éviter tout
+            // bruit flottant qui viendrait polluer le calcul du HT.
+            chantier.fraisFixes = round2(fraisFixes);
             
             saveData();
             updateDisplay();   // Rafraîchir le récap pour refléter les nouveaux paramètres
@@ -1138,10 +1418,51 @@
             }
         }
 
+        // ============================================================
+        // ARRONDIS À LA SOURCE (v2.4.0)
+        // ============================================================
+        // Pour éviter les incohérences d'affichage (par ex. la somme des
+        // volumes arrondis ≠ le total affiché arrondi), on arrondit les
+        // valeurs mesurées et calculées DÈS leur saisie/calcul, avant
+        // stockage. Ainsi toutes les opérations en aval partent des
+        // mêmes valeurs.
+        //
+        // Conventions :
+        //   - Longueur (m)  : 2 décimales (0.01 m = 1 cm)
+        //   - Diamètre (cm) : 1 décimale
+        //   - Volume (m³)   : 2 décimales
+        //   - Prix (€)      : recalculé sur le volume arrondi
+        //
+        // Note : les chantiers existants (JSON déjà stockés en
+        // localStorage) NE sont PAS recalculés au chargement. Seules
+        // les nouvelles saisies bénéficient de cette cohérence.
+
+        function round1(x) { return Math.round(x * 10) / 10; }
+        function round2(x) { return Math.round(x * 100) / 100; }
+
+        // v2.5.2 : formatage du temps.
+        // formatHeuresDecimales : minutes → heures avec 2 décimales
+        //   90  → 1.50
+        //   10  → 0.17
+        //   0   → 0.00
+        // formatHeuresMinutes   : minutes → format horloge HH:MM
+        //   90  → "01:30"
+        //   30  → "00:30"
+        //   750 → "12:30"
+        function formatHeuresDecimales(minutes) {
+            return round2(minutes / 60).toFixed(2);
+        }
+        function formatHeuresMinutes(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        }
+
         function calculerVolume(longueur, diametre) {
             const rayon = diametre / 2 / 100;
             const volume = Math.PI * Math.pow(rayon, 2) * longueur;
-            return volume;
+            // Arrondi à 2 décimales à la source (v2.4.0)
+            return round2(volume);
         }
 
         function formatDateTime(date) {
@@ -1161,9 +1482,11 @@
             }
 
             // Saisie en cm, conversion immédiate en mètres pour rester
-            // compatible avec le format de stockage v1.x (longueur en m)
+            // compatible avec le format de stockage v1.x (longueur en m).
+            // v2.4.0 : arrondi à 2 décimales pour éviter les erreurs
+            // d'affichage (cf. round2/calculerVolume).
             const longueurCm = parseFloat(document.getElementById('longueur').value);
-            const longueur = longueurCm / 100;  // longueur en mètres
+            const longueur = round2(longueurCm / 100);  // longueur en mètres, arrondie
             let diametre;
 
             if (currentMesure === 'diametre') {
@@ -1176,18 +1499,26 @@
                 }
                 diametre = circonference / Math.PI;
             }
+            // v2.4.0 : arrondi du diamètre à 1 décimale (que saisi ou calculé
+            // depuis la circonférence) pour cohérence d'affichage.
+            diametre = round1(diametre);
 
             if (!longueurCm || longueurCm <= 0 || !diametre || diametre <= 0) {
                 alert('⚠️ Veuillez entrer des valeurs valides');
                 return;
             }
 
+            // Volume calculé et arrondi à 2 décimales à la source.
             const volume = calculerVolume(longueur, diametre);
-            let prix = volume * chantier.tarif;
-            
-            if (chantier.prixMinBille > 0 && prix < chantier.prixMinBille) {
-                prix = chantier.prixMinBille;
-            }
+            // v2.5.0 : entry.prix est stocké SANS le plancher prixMinBille.
+            // Le plancher est un filtre dynamique appliqué à l'affichage
+            // uniquement (cf. facturationBille dans computeChantierTotals).
+            // Ce qui permet à un changement de prixMinBille dans les
+            // paramètres d'affecter rétroactivement la facturation, sans
+            // modifier les données de saisie.
+            //
+            // Le prixUnitaire et le volume, eux, sont figés à la saisie.
+            const prix = round2(volume * chantier.tarif);
             
             chantier.entries.push({
                 id: Date.now(),
@@ -1197,7 +1528,12 @@
                 diametre: diametre,
                 volume: volume,
                 prixUnitaire: chantier.tarif,
-                prix: prix
+                prix: prix,
+                // Essence : stockage du nom long (cf. ESSENCES dans la
+                // zone de personnalisation). Reste rémanente après
+                // l'ajout : currentEssenceSaisie n'est PAS réinitialisée.
+                // Si pas d'essence sélectionnée, on stocke chaîne vide.
+                essence: currentEssenceSaisie || ''
             });
 
             saveData();
@@ -1206,7 +1542,7 @@
             document.getElementById('diametre').value = '';
             document.getElementById('circonference').value = '';
             
-            let message = '✓ Bille ajoutée avec succès!\n\nVolume: ' + volume.toFixed(3) + ' m³\nPrix: ' + prix.toFixed(2) + ' €';
+            let message = '✓ Bille ajoutée avec succès!\n\nVolume: ' + volume.toFixed(2) + ' m³\nPrix: ' + prix.toFixed(2) + ' €';
             if (chantier.prixMinBille > 0 && prix === chantier.prixMinBille) {
                 message += '\n\n(Prix minimum appliqué)';
             }
@@ -1307,7 +1643,8 @@
             }
 
             const heures = minutes / 60;
-            const prix = heures * chantier.tauxHoraire;
+            // v2.4.1 : arrondi round2 pour cohérence des additions.
+            const prix = round2(heures * chantier.tauxHoraire);
 
             // Timestamp = début théorique de la période de travail.
             // - Si l'utilisateur a cliqué Play à un moment donné,
@@ -1347,7 +1684,9 @@
 
             const libelle = (document.getElementById('evt-libelle').value || '').trim();
             const prixRaw = document.getElementById('evt-prix').value;
-            const prix = parseFloat(prixRaw);
+            // v2.4.1 : arrondi round2 pour cohérence (le champ HTML peut
+            // laisser passer des valeurs comme 12.345 selon la locale).
+            const prix = round2(parseFloat(prixRaw));
 
             if (isNaN(prix) || prix < 0) {
                 alert('⚠️ Prix invalide (entrez 0 pour un simple marqueur temporel)');
@@ -1392,19 +1731,34 @@
 
             // Réinitialiser les visibilités par défaut
             document.getElementById('edit-libelle-group').style.display = 'none';
-            document.getElementById('edit-volume-group').style.display = 'block';
+            document.getElementById('edit-volume-group').style.display = 'grid';
 
-            // Boutons "actualiser" PU et Prix : visibles uniquement pour
-            // grume et temps. Pour un événement, le PU et le prix sont
-            // saisis manuellement et n'ont pas de source paramétrique.
+            // Bouton "actualiser" PU : visible uniquement pour
+            // grume et temps. Pour un événement, le PU est
+            // saisi manuellement et n'a pas de source paramétrique.
+            // v2.5.0 : le bouton refresh-prix a été retiré en même temps
+            // que le champ Prix total.
             const showRefresh = (entry.type !== 'evenement');
             document.getElementById('btn-refresh-pu').style.display = showRefresh ? 'inline-flex' : 'none';
-            document.getElementById('btn-refresh-prix').style.display = showRefresh ? 'inline-flex' : 'none';
+
+            // Select Essence : visible uniquement pour les grumes (un
+            // temps ou un événement n'a pas d'essence). On le remplit
+            // dynamiquement à chaque ouverture pour refléter d'éventuels
+            // changements de la liste ESSENCES.
+            const essenceSide = document.getElementById('edit-essence-side');
+            if (entry.type === 'grume') {
+                essenceSide.style.display = 'block';
+                populateEditEssenceSelect(entry.essence || '');
+            } else {
+                essenceSide.style.display = 'none';
+            }
 
             if (entry.type === 'grume') {
                 document.getElementById('edit-volume-label').textContent = 'Volume (m³)';
-                document.getElementById('edit-volume').value = entry.volume.toFixed(3);
-                document.getElementById('edit-volume').step = '0.001';
+                document.getElementById('edit-volume').value = entry.volume.toFixed(2);
+                // v2.5.2 : step 0.01 (centièmes) au lieu de 0.001 (millièmes)
+                // pour cohérence avec l'arrondi à 2 décimales du volume.
+                document.getElementById('edit-volume').step = '0.01';
             } else if (entry.type === 'temps') {
                 document.getElementById('edit-volume-label').textContent = 'Temps (minutes)';
                 document.getElementById('edit-volume').value = entry.minutes;
@@ -1417,9 +1771,31 @@
             }
 
             document.getElementById('edit-prix-unitaire').value = entry.prixUnitaire.toFixed(2);
-            document.getElementById('edit-prix').value = entry.prix.toFixed(2);
 
             document.getElementById('modal-edit').classList.add('active');
+        }
+
+        // Remplit le select Essence du modal d'édition. Le sélecteur
+        // utilise le NOM LONG comme value pour faciliter le mapping avec
+        // le stockage. L'affichage montre le nom + l'abréviation pour
+        // que l'utilisateur reconnaisse facilement (ex: "Douglas (Dg)").
+        function populateEditEssenceSelect(currentValue) {
+            const sel = document.getElementById('edit-essence');
+            if (!sel) return;
+            let html = '<option value="">— Aucune —</option>';
+            ESSENCES.forEach(e => {
+                html += '<option value="' + e.nom + '">' + e.nom + ' (' + e.abrev + ')</option>';
+            });
+            sel.innerHTML = html;
+            // Si l'essence stockée n'est plus dans la liste, on ajoute
+            // une option dédiée pour ne pas perdre la donnée
+            if (currentValue && !ESSENCES.find(e => e.nom === currentValue)) {
+                const opt = document.createElement('option');
+                opt.value = currentValue;
+                opt.textContent = currentValue + ' (legacy)';
+                sel.appendChild(opt);
+            }
+            sel.value = currentValue || '';
         }
 
         // Actualise le champ PU en réappliquant le tarif courant des paramètres :
@@ -1442,36 +1818,9 @@
             document.getElementById('edit-prix-unitaire').value = nouveauPU.toFixed(2);
         }
 
-        // Recalcule le prix total à partir des champs actuels du modal
-        // (Volume/Temps + PU). Tient compte des modifications non encore
-        // sauvegardées. Applique le plancher chantier.prixMinBille pour
-        // les grumes (jamais en dessous du prix min par bille).
-        function refreshEditPrix() {
-            const entry = chantier.entries.find(e => e.id === editingEntryId);
-            if (!entry) return;
-
-            const volumeOuTemps = parseFloat(document.getElementById('edit-volume').value);
-            const pu = parseFloat(document.getElementById('edit-prix-unitaire').value);
-            if (isNaN(volumeOuTemps) || isNaN(pu)) {
-                alert('⚠️ Volume/Temps ou PU invalide');
-                return;
-            }
-
-            let nouveauPrix;
-            if (entry.type === 'grume') {
-                // Prix = volume (m³) × PU (€/m³), avec plancher prixMinBille
-                nouveauPrix = volumeOuTemps * pu;
-                if (chantier.prixMinBille > 0 && nouveauPrix < chantier.prixMinBille) {
-                    nouveauPrix = chantier.prixMinBille;
-                }
-            } else if (entry.type === 'temps') {
-                // Prix = (minutes / 60) × PU (€/h)
-                nouveauPrix = (volumeOuTemps / 60) * pu;
-            } else {
-                return; // événement : pas concerné
-            }
-            document.getElementById('edit-prix').value = nouveauPrix.toFixed(2);
-        }
+        // v2.5.0 : refreshEditPrix() supprimée. Le prix n'est plus éditable
+        // dans le modal — il est toujours recalculé à partir de volume × PU,
+        // avec le plancher prixMinBille appliqué à l'affichage.
 
         function closeEditModal() {
             document.getElementById('modal-edit').classList.remove('active');
@@ -1483,20 +1832,33 @@
             if (!entry) return;
 
             const newPrixUnitaire = parseFloat(document.getElementById('edit-prix-unitaire').value);
-            const newPrix = parseFloat(document.getElementById('edit-prix').value);
 
             if (entry.type === 'grume') {
                 const newVolume = parseFloat(document.getElementById('edit-volume').value);
-                entry.volume = newVolume;
+                entry.volume = round2(newVolume);
+                entry.essence = document.getElementById('edit-essence').value || '';
+                if (!isNaN(newPrixUnitaire)) {
+                    entry.prixUnitaire = round2(newPrixUnitaire);
+                }
+                // v2.5.0 : prix brut = volume × PU, SANS plancher.
+                // Le plancher est appliqué à l'affichage via facturationBille().
+                entry.prix = round2(entry.volume * entry.prixUnitaire);
             } else if (entry.type === 'temps') {
                 const newMinutes = parseFloat(document.getElementById('edit-volume').value);
                 entry.minutes = newMinutes;
+                if (!isNaN(newPrixUnitaire)) {
+                    entry.prixUnitaire = round2(newPrixUnitaire);
+                }
+                // Prix temps = (minutes/60) × PU, arrondi round2 par cohérence
+                entry.prix = round2((entry.minutes / 60) * entry.prixUnitaire);
             } else if (entry.type === 'evenement') {
                 entry.libelle = (document.getElementById('edit-libelle').value || '').trim();
+                // Pour un événement, le PU EST le prix (pas de calcul).
+                if (!isNaN(newPrixUnitaire)) {
+                    entry.prixUnitaire = round2(newPrixUnitaire);
+                    entry.prix = entry.prixUnitaire;
+                }
             }
-
-            if (!isNaN(newPrixUnitaire)) entry.prixUnitaire = newPrixUnitaire;
-            if (!isNaN(newPrix)) entry.prix = newPrix;
 
             saveData();
             closeEditModal();
@@ -1508,7 +1870,7 @@
             const tableBody = document.getElementById('table-body');
             
             if (!chantier.entries || !Array.isArray(chantier.entries) || chantier.entries.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="8" class="empty-row">Aucune donnée saisie</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="9" class="empty-row">Aucune donnée saisie</td></tr>';
             } else {
                 let tableHTML = '';
                 let grumeCount = 0;
@@ -1516,15 +1878,24 @@
                 chantier.entries.forEach((entry) => {
                     if (entry.type === 'grume') {
                         grumeCount++;
+                        // Abréviation de l'essence (vide si pas d'essence sur la grume)
+                        const essAbrev = entry.essence ? getAbrevForEssence(entry.essence) : '';
+                        // v2.5.0 : le prix affiché est le prix facturé (avec
+                        // plancher prixMinBille appliqué si applicable),
+                        // pas le prix brut stocké.
+                        const { prixFacture, auForfait } = facturationBille(entry);
+                        // Petit marqueur visuel pour les billes au forfait
+                        const forfaitMark = auForfait ? ' <span title="Facturée au forfait minimum" style="color:#c0392b;font-size:0.85em;">(min)</span>' : '';
                         tableHTML += `
                             <tr class="row-grume">
                                 <td class="col-num"><strong>${grumeCount}</strong></td>
                                 <td class="col-heure">${formatDateTime(entry.timestamp)}</td>
+                                <td class="col-essence">${essAbrev}</td>
                                 <td>${entry.longueur.toFixed(2)}</td>
                                 <td>${entry.diametre.toFixed(1)}</td>
-                                <td><strong>${entry.volume.toFixed(3)} m³</strong></td>
+                                <td><strong>${entry.volume.toFixed(2)} m³</strong></td>
                                 <td>${entry.prixUnitaire.toFixed(0)} €</td>
-                                <td><strong>${entry.prix.toFixed(2)} €</strong></td>
+                                <td><strong>${prixFacture.toFixed(2)} €</strong>${forfaitMark}</td>
                                 <td class="actions-cell">
                                     <button class="action-btn edit" onclick="openEditModal(${entry.id})" title="Éditer">
                                         <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -1540,8 +1911,9 @@
                             <tr class="row-temps">
                                 <td class="col-num"><strong>⏱</strong></td>
                                 <td class="col-heure">${formatDateTime(entry.timestamp)}</td>
+                                <td class="col-essence"></td>
                                 <td colspan="2" style="text-align: center;"><em>-</em></td>
-                                <td><strong>${entry.minutes} min</strong></td>
+                                <td><strong>${formatHeuresMinutes(entry.minutes)}</strong></td>
                                 <td>${entry.prixUnitaire.toFixed(0)} €</td>
                                 <td><strong>${entry.prix.toFixed(2)} €</strong></td>
                                 <td class="actions-cell">
@@ -1567,6 +1939,7 @@
                             <tr class="row-evenement">
                                 <td class="col-num"><strong>★</strong></td>
                                 <td class="col-heure">${formatDateTime(entry.timestamp)}</td>
+                                <td class="col-essence"></td>
                                 <td colspan="2" style="text-align: center;"><em>-</em></td>
                                 <td>${libelleAff}</td>
                                 <td>${puFormat} €</td>
@@ -1587,30 +1960,23 @@
                 tableBody.innerHTML = tableHTML;
             }
 
-            const grumes = chantier.entries.filter(e => e.type === 'grume');
-            const temps = chantier.entries.filter(e => e.type === 'temps');
-            const evenements = chantier.entries.filter(e => e.type === 'evenement');
+            // v2.4.1 : lecture des totaux depuis la source unique
+            // computeChantierTotals(), qui applique la cascade d'arrondis
+            // garantissant HT × 0.20 = TVA et HT + TVA = TTC.
+            const t = computeChantierTotals();
 
-            const totalGrumes = grumes.length;
-            const totalVolume = grumes.reduce((sum, g) => sum + g.volume, 0);
-            const subtotalBois = grumes.reduce((sum, g) => sum + g.prix, 0);
-            const totalMinutes = temps.reduce((sum, t) => sum + t.minutes, 0);
-            const subtotalTemps = temps.reduce((sum, t) => sum + t.prix, 0);
-            const subtotalEvenements = evenements.reduce((sum, e) => sum + (e.prix || 0), 0);
-            const totalHT = subtotalBois + subtotalTemps + chantier.fraisFixes + subtotalEvenements;
-            const montantTVA = totalHT * TAUX_TVA;
-            const totalTTC = totalHT + montantTVA;
-
-            document.getElementById('total-grumes').textContent = totalGrumes;
-            document.getElementById('total-volume').textContent = totalVolume.toFixed(3) + ' m³';
-            document.getElementById('subtotal-bois').textContent = subtotalBois.toFixed(2) + ' €';
-            document.getElementById('total-temps').textContent = totalMinutes + ' min';
-            document.getElementById('subtotal-temps').textContent = subtotalTemps.toFixed(2) + ' €';
-            document.getElementById('frais-fixes-display').textContent = chantier.fraisFixes.toFixed(2) + ' €';
-            document.getElementById('subtotal-evenements').textContent = subtotalEvenements.toFixed(2) + ' €';
-            document.getElementById('total-ht').textContent = totalHT.toFixed(2) + ' €';
-            document.getElementById('montant-tva').textContent = montantTVA.toFixed(2) + ' €';
-            document.getElementById('total-ttc').textContent = totalTTC.toFixed(2) + ' €';
+            document.getElementById('total-grumes').textContent = t.nbBilles;
+            document.getElementById('total-volume').textContent = t.totalVolume.toFixed(2) + ' m³';
+            document.getElementById('volume-facture-m3').textContent = t.volumeFactureM3.toFixed(2) + ' m³';
+            document.getElementById('nb-billes-forfait').textContent = t.nbBillesForfait;
+            document.getElementById('subtotal-bois').textContent = t.subtotalBois.toFixed(2) + ' €';
+            document.getElementById('total-temps').textContent = formatHeuresDecimales(t.totalMinutes) + ' h';
+            document.getElementById('subtotal-temps').textContent = t.subtotalTemps.toFixed(2) + ' €';
+            document.getElementById('frais-fixes-display').textContent = t.fraisFixes.toFixed(2) + ' €';
+            document.getElementById('subtotal-evenements').textContent = t.subtotalEvenements.toFixed(2) + ' €';
+            document.getElementById('total-ht').textContent = t.totalHT.toFixed(2) + ' €';
+            document.getElementById('montant-tva').textContent = t.montantTVA.toFixed(2) + ' €';
+            document.getElementById('total-ttc').textContent = t.totalTTC.toFixed(2) + ' €';
         }
 
         function confirmReset() {
@@ -1638,6 +2004,303 @@
             alert('✓ Chantier terminé et données effacées');
         }
 
+        // ============================================================
+        // GÉNÉRATION DU RÉCAPITULATIF POUR ENVOI PAR MAIL (v2.3.0)
+        // ============================================================
+        //
+        // Le mail est composé de 4 parties (texte brut, séparateur |) :
+        //   1. EMAIL_INTRO (depuis zone de personnalisation)
+        //   2. Tableau ASCII des sous-totaux
+        //   3. EMAIL_OUTRO (depuis zone de personnalisation)
+        //   4. Détail bille par bille au format CSV (pipe-separated)
+        //
+        // v2.3.4p1 : envoi par mail temporairement remplacé par téléchargement
+        // d'un fichier TXT (cf. sendRecapByMail). Permet de vérifier la mise
+        // en forme du tableau dans un éditeur monospace.
+
+        // Calcule les sous-totaux du chantier — SOURCE UNIQUE DE VÉRITÉ.
+        //
+        // v2.4.1 : appelée par updateDisplay(), exportCSV() et le mail.
+        // Tous les arrondis appliqués ici sont ceux qui doivent apparaître
+        // partout (écran, CSV, mail) — plus de calcul dupliqué ailleurs.
+        //
+        // Convention d'arrondi (round2 = 2 décimales) :
+        //   - Chaque sous-total est arrondi à round2 après sommation, pour
+        //     absorber le bruit flottant JS accumulé
+        //     (ex: 0.42 + 0.13 = 0.5500000001 → 0.55).
+        //   - Le HT est calculé sur les sous-totaux DÉJÀ arrondis, puis
+        //     ré-arrondi (par sécurité).
+        //   - La TVA est calculée sur le HT arrondi, puis arrondie à round2.
+        //   - Le TTC est la somme HT_arrondi + TVA_arrondie.
+        //
+        // Ainsi le client peut vérifier à la main :
+        //   HT × 0.20 = TVA
+        //   HT + TVA = TTC
+        // sans écart d'un centime.
+        // v2.5.0 : calcule le prix facturé d'une bille en appliquant le
+        // plancher prixMinBille EN VIGUEUR dans les paramètres actuels.
+        // Retourne { prixFacture, auForfait } où auForfait indique si le
+        // plancher a été appliqué.
+        //
+        // Le prix brut stocké (entry.prix = volume × prixUnitaire) reste
+        // figé à la saisie, mais la classification "au m³ / au forfait"
+        // est recalculée à chaque affichage en fonction du plancher actuel.
+        function facturationBille(entry) {
+            const prixBrut = entry.prix || 0;
+            const plancher = round2(chantier.prixMinBille || 0);
+            if (plancher > 0 && prixBrut < plancher) {
+                return { prixFacture: plancher, auForfait: true };
+            }
+            return { prixFacture: prixBrut, auForfait: false };
+        }
+
+        function computeChantierTotals() {
+            const grumes = chantier.entries.filter(e => e.type === 'grume');
+            const tempsItems = chantier.entries.filter(e => e.type === 'temps');
+            const evenements = chantier.entries.filter(e => e.type === 'evenement');
+
+            // Volume total (toutes billes confondues)
+            const totalVolume = round2(grumes.reduce((s, g) => s + g.volume, 0));
+            const totalMinutes = tempsItems.reduce((s, t) => s + t.minutes, 0);
+
+            // v2.5.0 : détail par bille pour distinguer les billes au m³ et
+            // au forfait. Volume facturé au m³ = somme des volumes des
+            // billes au m³ uniquement. Bille au forfait minimum = compte
+            // des billes où le plancher s'applique.
+            let volumeFactureM3 = 0;
+            let nbBillesForfait = 0;
+            let subtotalBoisBrut = 0;
+            grumes.forEach(g => {
+                const { prixFacture, auForfait } = facturationBille(g);
+                subtotalBoisBrut += prixFacture;
+                if (auForfait) {
+                    nbBillesForfait++;
+                } else {
+                    volumeFactureM3 += g.volume;
+                }
+            });
+            const subtotalBois = round2(subtotalBoisBrut);
+            volumeFactureM3 = round2(volumeFactureM3);
+
+            // Autres sous-totaux, arrondis pour absorber le bruit flottant
+            const subtotalTemps = round2(tempsItems.reduce((s, t) => s + t.prix, 0));
+            const subtotalEvenements = round2(evenements.reduce((s, e) => s + e.prix, 0));
+            const fraisFixes = round2(chantier.fraisFixes || 0);
+
+            // Cascade d'arrondis pour cohérence HT × TVA + HT = TTC
+            const totalHT = round2(subtotalBois + subtotalTemps + fraisFixes + subtotalEvenements);
+            const montantTVA = round2(totalHT * TAUX_TVA);
+            const totalTTC = round2(totalHT + montantTVA);
+
+            return {
+                grumes, tempsItems, evenements,
+                nbBilles: grumes.length,
+                totalVolume, totalMinutes,
+                volumeFactureM3, nbBillesForfait,
+                subtotalBois, subtotalTemps, subtotalEvenements,
+                fraisFixes,
+                totalHT, montantTVA, totalTTC
+            };
+        }
+
+        // Génère le tableau ASCII des sous-totaux (largeur ~45 chars).
+        // Aligne les valeurs à droite pour lisibilité.
+        function buildAsciiTotals(t) {
+            // Largeur des colonnes : libellé sur ~26 chars, valeur sur ~13 chars
+            // pour totaliser ~41 chars + " : " = 44 chars de largeur utile.
+            const labelW = 26;
+            const valueW = 13;
+            const line = (label, value, sep = ' ') => {
+                return '  ' + label.padEnd(labelW, sep) + ' : ' + value.padStart(valueW, ' ');
+            };
+            const separator = '  ' + '-'.repeat(labelW + valueW + 3);
+            const heavySep  = '  ' + '='.repeat(labelW + valueW + 3);
+
+            let out = '===============================================\n';
+            out += '   RÉCAPITULATIF - Chantier ' + (chantier.client || '') + '\n';
+            out += '   Date : ' + formatDateOnly(Date.now()) + '\n';
+            out += '===============================================\n\n';
+
+            // v2.5.1 : ajout des tarifs en vigueur pour référence.
+            out += line('Tarif au m3', (chantier.tarif || 0).toFixed(2) + ' €') + '\n';
+            out += line('Taux horaire', (chantier.tauxHoraire || 0).toFixed(2) + ' €') + '\n';
+            out += separator + '\n';
+            out += line('Nombre de billes', String(t.nbBilles)) + '\n';
+            out += line('Volume total', t.totalVolume.toFixed(2) + ' m\u00B3') + '\n';
+            out += line('Volume facturé au m³', t.volumeFactureM3.toFixed(2) + ' m\u00B3') + '\n';
+            out += line('Bille au forfait minimum', String(t.nbBillesForfait)) + '\n';
+            out += line('Sous-total bois', t.subtotalBois.toFixed(2) + ' €') + '\n';
+            out += separator + '\n';
+            out += line('Total travail horaire', formatHeuresDecimales(t.totalMinutes) + ' h') + '\n';
+            out += line('Sous-total temps', t.subtotalTemps.toFixed(2) + ' €') + '\n';
+            out += separator + '\n';
+            out += line('Frais fixes', (chantier.fraisFixes || 0).toFixed(2) + ' €') + '\n';
+            // v2.5.1 : "Sous-total événements" → "Total événements"
+            out += line('Total événements', t.subtotalEvenements.toFixed(2) + ' €') + '\n';
+            out += heavySep + '\n';
+            out += line('TOTAL HT', t.totalHT.toFixed(2) + ' €') + '\n';
+            out += line('TVA (' + (TAUX_TVA * 100).toFixed(0) + '%)', t.montantTVA.toFixed(2) + ' €') + '\n';
+            out += heavySep + '\n';
+            out += line('TOTAL TTC', t.totalTTC.toFixed(2) + ' €') + '\n';
+            out += heavySep + '\n';
+            return out;
+        }
+
+        // Génère le détail du chantier en tableau aligné verticalement.
+        //
+        // v2.3.6 : cette fonction N'EST PLUS UTILISÉE (revenu au format
+        // CSV classique v2.2.x dans exportCSV, et plus de détail dans
+        // le mail). Conservée pour faciliter une éventuelle réintégration
+        // si on veut un tableau ASCII détaillé dans le mail à nouveau.
+        //
+        // Format historique : 8 colonnes à largeur fixe, séparateur " ; ".
+        // Largeurs : N°=4, Heure=14, Essence=7, Long=4, Diam=5,
+        // Vol/temps=9, PU=3, Prix_€HT=8.
+        function buildCsvDetail() {
+            const SEP = ' ; ';
+            const COLS = [
+                { name: 'N°',        w: 4, align: 'l' },
+                { name: 'Heure',     w: 14, align: 'l' },
+                { name: 'Essence',   w: 7, align: 'l' },
+                { name: 'Long',      w: 4, align: 'r' },
+                { name: 'Diam',      w: 5, align: 'r' },
+                { name: 'Vol/temps', w: 9, align: 'l' },
+                { name: 'PU',        w: 3, align: 'r' },
+                { name: 'Prix_€HT',  w: 8, align: 'r' }
+            ];
+
+            // Helper : pad ou tronque un texte à la largeur d'une colonne.
+            // Tronque si dépasse, sinon padStart/padEnd selon alignement.
+            const fit = (val, col) => {
+                const s = String(val);
+                if (s.length > col.w) return s.substring(0, col.w);
+                return col.align === 'r'
+                    ? s.padStart(col.w, ' ')
+                    : s.padEnd(col.w, ' ');
+            };
+
+            // En-tête
+            let out = COLS.map(c => fit(c.name, c)).join(SEP) + '\n';
+
+            let grumeCount = 0;
+            chantier.entries.forEach(entry => {
+                let values;
+                if (entry.type === 'grume') {
+                    grumeCount++;
+                    const ess = (entry.essence || '').substring(0, 7);
+                    values = [
+                        String(grumeCount),    // numéro sans préfixe
+                        formatDateTime(entry.timestamp),
+                        ess,
+                        entry.longueur.toFixed(2),
+                        entry.diametre.toFixed(1),
+                        entry.volume.toFixed(3),
+                        entry.prixUnitaire.toFixed(0),
+                        entry.prix.toFixed(2)
+                    ];
+                } else if (entry.type === 'temps') {
+                    values = [
+                        'T',
+                        formatDateTime(entry.timestamp),
+                        '', '', '',
+                        String(entry.minutes),
+                        entry.prixUnitaire.toFixed(0),
+                        entry.prix.toFixed(2)
+                    ];
+                } else if (entry.type === 'evenement') {
+                    // Le libellé peut contenir un ; : on le remplace par /
+                    // pour ne pas casser le parsing côté destinataire.
+                    const lib = (entry.libelle || '').replace(/;/g, '/');
+                    values = [
+                        '*',
+                        formatDateTime(entry.timestamp),
+                        '', '', '',
+                        lib,    // sera tronqué à 9 par fit()
+                        entry.prixUnitaire.toFixed(0),
+                        entry.prix.toFixed(2)
+                    ];
+                }
+                if (values) {
+                    out += values.map((v, i) => fit(v, COLS[i])).join(SEP) + '\n';
+                }
+            });
+
+            out += '\n';
+            out += 'Long et Diam en cm, Vol en m³, temps en min.\n';
+            return out;
+        }
+
+        // Date du jour au format jj/mm/aaaa
+        function formatDateOnly(ts) {
+            const d = new Date(ts);
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            return dd + '/' + mm + '/' + yyyy;
+        }
+
+        // Fonction principale du bouton "📧 Envoyer mail".
+        // Génère le contenu complet et l'envoie via Web Share API
+        // (sélecteur Android) ou fallback mailto: si pas dispo.
+        async function sendRecapByMail() {
+            if (!chantier.client) {
+                alert('⚠️ Veuillez d\'abord renseigner le nom du client dans les paramètres.');
+                return;
+            }
+            if (!chantier.entries || chantier.entries.length === 0) {
+                alert('⚠️ Aucune donnée à envoyer dans ce chantier.');
+                return;
+            }
+
+            // Si pas d'email, demander confirmation mais permettre l'envoi
+            // (cas où l'utilisateur veut renseigner le destinataire directement
+            // dans l'app mail au moment de l'envoi).
+            if (!chantier.email) {
+                const ok = confirm("⚠️ Aucun email n'est renseigné pour ce client.\n\nVoulez-vous continuer ? Vous pourrez saisir le destinataire directement dans votre application mail.");
+                if (!ok) return;
+            }
+
+            // Construction du corps du mail.
+            // v2.3.6 : intro + tableau ASCII des sous-totaux + outro.
+            // Pas de détail bille par bille dans le mail (cf. bouton Export
+            // CSV pour récupérer le détail complet).
+            const t = computeChantierTotals();
+            const dateStr = formatDateOnly(Date.now());
+
+            let body = EMAIL_INTRO + '\n\n\n';
+            body += buildAsciiTotals(t);
+            body += '\n\n' + EMAIL_OUTRO;
+
+            // Sujet : substitution {client} et {date}
+            const subject = EMAIL_SUJET
+                .replace('{client}', chantier.client)
+                .replace('{date}', dateStr);
+
+            // Tentative Web Share API en premier (meilleur sur Android Brave).
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: subject,
+                        text: body
+                    });
+                    return;
+                } catch (err) {
+                    // L'utilisateur a annulé ou Web Share a échoué :
+                    // on tente le fallback mailto: ci-dessous.
+                    if (err.name === 'AbortError') return;
+                }
+            }
+
+            // Fallback mailto: si Web Share indisponible (Firefox PC etc.)
+            // Le contenu (intro + sous-totaux + outro) est court, on tient
+            // largement dans la limite des ~50 000 chars du mailto:.
+            const recipient = encodeURIComponent(chantier.email || '');
+            const encSubject = encodeURIComponent(subject);
+            const url = 'mailto:' + recipient + '?subject=' + encSubject
+                + '&body=' + encodeURIComponent(body);
+            window.location.href = url;
+        }
+
         function exportCSV() {
             if (!chantier.entries || chantier.entries.length === 0) {
                 alert('⚠️ Aucune donnée à exporter');
@@ -1646,6 +2309,7 @@
 
             // Échappe une valeur CSV : si elle contient ; " ou un retour ligne,
             // on l'entoure de guillemets et on double les guillemets internes.
+            // RFC 4180 compliant.
             const csvEscape = (val) => {
                 const s = String(val == null ? '' : val);
                 if (/[;"\n\r]/.test(s)) {
@@ -1654,45 +2318,70 @@
                 return s;
             };
 
-            let csv = 'Client;Email;Type;Numero;Heure;Longueur_m;Diametre_cm;Volume_Temps;Prix_Unitaire;Prix_EUR\n';
+            // v2.4.0 : helper de formatage numérique CSV avec VIRGULE
+            // décimale (convention française). Prend un nombre + nb de
+            // décimales, renvoie la string avec ',' au lieu de '.'.
+            // Le séparateur CSV étant ';', il n'y a pas de conflit avec
+            // les virgules décimales dans les valeurs.
+            const fr = (num, decimals) => num.toFixed(decimals).replace('.', ',');
+
+            // Format CSV v2.4.0 : 11 colonnes, séparateur ; sans padding
+            // pour ouverture directe dans Excel. Bloc TOTAUX en bas.
+            // Nouveauté : virgule décimale pour tous les numériques.
+            // Volume : 2 décimales (aligné sur l'arrondi à la source, cf.
+            // calculerVolume — plus de troisième décimale inutile).
+            // v2.5.2 : 12 colonnes (ajout de la colonne "Unité" séparée de
+            // Volume_Temps). La colonne Volume_Temps ne contient plus que
+            // le nombre nu, l'unité étant dans une colonne dédiée pour
+            // pouvoir exploiter numériquement les valeurs dans Excel.
+            //   - Bille  : Volume_Temps=0,50 ; Unité=m3
+            //   - Temps  : Volume_Temps=1,50 ; Unité=h  (heures décimales)
+            //   - Évén.  : Volume_Temps=libellé ; Unité vide
+            let csv = 'Client;Email;Type;Numero;Heure;Essence;Longueur_m;Diametre_cm;Volume_Temps;Unite;Prix_Unitaire;Prix_EUR\n';
             
             let grumeCount = 0;
             chantier.entries.forEach((entry) => {
                 if (entry.type === 'grume') {
                     grumeCount++;
-                    csv += `${chantier.client};${chantier.email};Bille;${grumeCount};${formatDateTime(entry.timestamp)};${entry.longueur.toFixed(2)};${entry.diametre.toFixed(1)};${entry.volume.toFixed(3)} m3;${entry.prixUnitaire.toFixed(2)};${entry.prix.toFixed(2)}\n`;
+                    const essCsv = csvEscape(entry.essence || '');
+                    // v2.5.0 : la colonne Prix_EUR contient le prix facturé
+                    // (avec plancher prixMinBille appliqué si applicable),
+                    // cohérent avec ce qui est affiché à l'écran et sommé
+                    // dans le sous-total bois.
+                    const { prixFacture } = facturationBille(entry);
+                    csv += `${chantier.client};${chantier.email};Bille;${grumeCount};${formatDateTime(entry.timestamp)};${essCsv};${fr(entry.longueur, 2)};${fr(entry.diametre, 1)};${fr(entry.volume, 2)};m3;${fr(entry.prixUnitaire, 2)};${fr(prixFacture, 2)}\n`;
                 } else if (entry.type === 'temps') {
-                    csv += `${chantier.client};${chantier.email};Temps;;${formatDateTime(entry.timestamp)};;;${entry.minutes} min;${entry.prixUnitaire.toFixed(2)};${entry.prix.toFixed(2)}\n`;
+                    // v2.5.2 : Volume_Temps en heures décimales (au lieu de minutes)
+                    const heuresStr = formatHeuresDecimales(entry.minutes).replace('.', ',');
+                    csv += `${chantier.client};${chantier.email};Temps;;${formatDateTime(entry.timestamp)};;;;${heuresStr};h;${fr(entry.prixUnitaire, 2)};${fr(entry.prix, 2)}\n`;
                 } else if (entry.type === 'evenement') {
                     const lib = csvEscape(entry.libelle || '');
-                    csv += `${chantier.client};${chantier.email};Evenement;;${formatDateTime(entry.timestamp)};;;${lib};${entry.prixUnitaire.toFixed(2)};${entry.prix.toFixed(2)}\n`;
+                    // Événement : libellé texte dans Volume_Temps, pas d'unité
+                    csv += `${chantier.client};${chantier.email};Evenement;;${formatDateTime(entry.timestamp)};;;;${lib};;${fr(entry.prixUnitaire, 2)};${fr(entry.prix, 2)}\n`;
                 }
             });
 
-            const grumes = chantier.entries.filter(e => e.type === 'grume');
-            const temps = chantier.entries.filter(e => e.type === 'temps');
-            const evenements = chantier.entries.filter(e => e.type === 'evenement');
-            const totalVolume = grumes.reduce((sum, g) => sum + g.volume, 0);
-            const subtotalBois = grumes.reduce((sum, g) => sum + g.prix, 0);
-            const totalMinutes = temps.reduce((sum, t) => sum + t.minutes, 0);
-            const subtotalTemps = temps.reduce((sum, t) => sum + t.prix, 0);
-            const subtotalEvenements = evenements.reduce((sum, e) => sum + (e.prix || 0), 0);
-            const totalHT = subtotalBois + subtotalTemps + chantier.fraisFixes + subtotalEvenements;
-            const montantTVA = totalHT * TAUX_TVA;
-            const totalTTC = totalHT + montantTVA;
+            // v2.4.1 : totaux lus depuis la source unique computeChantierTotals.
+            const t = computeChantierTotals();
 
             csv += `\n`;
-            csv += `TOTAUX;;;;;;;;;\n`;
-            csv += `Nombre de billes;;;;${grumes.length};;;;\n`;
-            csv += `Volume total;;;;;${totalVolume.toFixed(3)};;;\n`;
-            csv += `Sous-total bois;;;;;;;;${subtotalBois.toFixed(2)}\n`;
-            csv += `Temps total;;;;;;;;${totalMinutes};\n`;
-            csv += `Sous-total temps;;;;;;;;${subtotalTemps.toFixed(2)}\n`;
-            csv += `Frais fixes;;;;;;;;${chantier.fraisFixes.toFixed(2)}\n`;
-            csv += `Sous-total evenements;;;;;;;;${subtotalEvenements.toFixed(2)}\n`;
-            csv += `TOTAL HT;;;;;;;;${totalHT.toFixed(2)}\n`;
-            csv += `TVA (${(TAUX_TVA * 100).toFixed(0)}%);;;;;;;;${montantTVA.toFixed(2)}\n`;
-            csv += `TOTAL TTC;;;;;;;;${totalTTC.toFixed(2)}\n`;
+            // v2.5.1 : bloc TOTAUX simplifié en 3 colonnes (libellé;valeur;unité)
+            // au lieu de 11. Le bloc principal reste en 11 colonnes (aligné
+            // avec l'en-tête), le bloc TOTAUX est visuellement séparé et
+            // plus lisible dans Excel.
+            csv += `TOTAUX\n`;
+            csv += `Nombre de billes;${t.nbBilles};unités\n`;
+            csv += `Volume total;${fr(t.totalVolume, 2)};m3\n`;
+            csv += `Volume facture au m3;${fr(t.volumeFactureM3, 2)};m3\n`;
+            csv += `Bille au forfait minimum;${t.nbBillesForfait};unités\n`;
+            csv += `Sous-total bois;${fr(t.subtotalBois, 2)};€\n`;
+            csv += `Temps total;${formatHeuresDecimales(t.totalMinutes).replace('.', ',')};h\n`;
+            csv += `Sous-total temps;${fr(t.subtotalTemps, 2)};€\n`;
+            csv += `Frais fixes;${fr(t.fraisFixes, 2)};€\n`;
+            csv += `Total evenements;${fr(t.subtotalEvenements, 2)};€\n`;
+            csv += `TOTAL HT;${fr(t.totalHT, 2)};€\n`;
+            csv += `TVA (${(TAUX_TVA * 100).toFixed(0)}%);${fr(t.montantTVA, 2)};€\n`;
+            csv += `TOTAL TTC;${fr(t.totalTTC, 2)};€\n`;
 
             const date = new Date().toISOString().split('T')[0];
             const filename = `chantier_${chantier.client}_${date}.csv`;
